@@ -19,6 +19,10 @@ dresden_boundaries <- shapefile("created/GADM/Dresden_boundaries.shp")
 GHSL_pop_ESP <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4_ESP/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4.tif")
 GHSL_pop_POL <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3_POL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3.tif")
 
+slope_ESP <- raster("original/slope/EUD_CP-SLOP_2500015000-AA_ESP/EUD_CP-SLOP_2500015000-AA.tif")
+slope_GER <- raster("original/slope/EUD_CP-SLOP_4500035000-AA_GER/EUD_CP-SLOP_4500035000-AA.tif")
+slope_POL <- raster("original/slope/EUD_CP-SLOP_5500035000-AA_POL/EUD_CP-SLOP_5500035000-AA.tif")
+
 
 
 reprojectAndCrop <- function(ghsl, boundary, epsg, resolution) {
@@ -86,21 +90,37 @@ getChangeFromMultitemp <- function(ghsl, boundary, epsg, resolution) {
 }
 
 
+DNtoPercentage <- function(DN) {
+  rad <- (acos(DN/250))
+  percentage <- (tan(rad)*100)
+  
+  return(percentage)
+}
+
+
+citySlopeAsPercentage <- function(slope_raster, boundary, epsg) {
+  # clip and reproject slope dataset
+  slope_reprojected <- reprojectAndCrop(slope_raster, boundary, epsg, 25)
+  
+  # convert to percentage
+  slope_per <- DNtoPercentage(slope_reprojected)
+  
+  plot(slope_per)
+  return(slope_per)
+}
+
+
+
 change_Sevilla <- getChange(GHSL_ESP_1990, GHSL_ESP_2014, sevilla_boundaries, epsg = 32630, resolution = 250, threshold = 50)
 writeRaster(change_Sevilla, "created/inR/sevilla_change.tif", overwrite=T)
-
 change_Sevilla_30m <- getChangeFromMultitemp(GHSL_ESP_30m, sevilla_boundaries, 32630, resolution = 30)
 writeRaster(change_Sevilla_30m, "created/inR/sevilla_change_30_m.tif", overwrite=T)
-
 change_Krakow <- getChange(GHSL_POL_1990, GHSL_POL_2014, krakow_boundaries, epsg = 32634, resolution = 250, threshold = 50)
 writeRaster(change_Krakow, "created/inR/krakow_change.tif", overwrite=T)
-
 change_Krakow_30m <- getChangeFromMultitemp(GHSL_POL_30m, krakow_boundaries, 32634, resolution = 30)
 writeRaster(change_Krakow_30m, "created/inR/krakow_change_30_m.tif", overwrite=T)
-
 change_Dresden <- getChange(GHSL_POL_1990, GHSL_POL_2014, dresden_boundaries, epsg = 32633, resolution = 250, threshold = 50)
 writeRaster(change_Dresden, "created/inR/dresden_change.tif", overwrite=T)
-
 change_Dresden_30m <- getChangeFromMultitemp(GHSL_POL_30m, dresden_boundaries, 32633, resolution = 30)
 writeRaster(change_Dresden_30m, "created/inR/dresden_change_30_m.tif", overwrite=T)
 
@@ -110,6 +130,13 @@ population_Krakow <- reprojectAndCrop(GHSL_pop_POL, krakow_boundaries, 25834, 25
 writeRaster(population_Krakow, "created/inR/krakow_popDens.tif", overwrite=T)
 population_Dresden <- reprojectAndCrop(GHSL_pop_POL, dresden_boundaries, 25833, 250)
 writeRaster(population_Dresden, "created/inR/dresden_popDens.tif", overwrite=T)
+
+slope_Sevilla <- citySlopeAsPercentage(slope_ESP, sevilla_boundaries, 25830)
+writeRaster(slope_Sevilla, "created/slope/sevilla_slope.tif", overwrite=T)
+slope_Dresden <- citySlopeAsPercentage(slope_GER, dresden_boundaries, 25833)
+writeRaster(slope_Dresden, "created/slope/dresden_slope.tif", overwrite=T)
+slope_Krakow <- citySlopeAsPercentage(slope_POL, krakow_boundaries, 25834)
+writeRaster(slope_Krakow, "created/slope/krakow_slope.tif", overwrite=T)
 
 
 
