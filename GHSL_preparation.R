@@ -16,6 +16,9 @@ sevilla_boundaries <- shapefile("created/GADM/Sevilla_boundaries.shp")
 krakow_boundaries <- shapefile("created/GADM/Krakow_boundaries.shp")
 dresden_boundaries <- shapefile("created/GADM/Dresden_boundaries.shp")
 
+GHSL_pop_ESP <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4_ESP/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4.tif")
+GHSL_pop_POL <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3_POL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3.tif")
+
 
 
 reprojectAndCrop <- function(ghsl, boundary, epsg, resolution) {
@@ -101,8 +104,12 @@ writeRaster(change_Dresden, "created/inR/dresden_change.tif", overwrite=T)
 change_Dresden_30m <- getChangeFromMultitemp(GHSL_POL_30m, dresden_boundaries, 32633, resolution = 30)
 writeRaster(change_Dresden_30m, "created/inR/dresden_change_30_m.tif", overwrite=T)
 
-
-
+population_Sevilla <- reprojectAndCrop(GHSL_pop_ESP, sevilla_boundaries, 25830, 250)
+writeRaster(population_Sevilla, "created/inR/sevilla_popDens.tif", overwrite=T)
+population_Krakow <- reprojectAndCrop(GHSL_pop_POL, krakow_boundaries, 25834, 250)
+writeRaster(population_Krakow, "created/inR/krakow_popDens.tif", overwrite=T)
+population_Dresden <- reprojectAndCrop(GHSL_pop_POL, dresden_boundaries, 25833, 250)
+writeRaster(population_Dresden, "created/inR/dresden_popDens.tif", overwrite=T)
 
 
 
