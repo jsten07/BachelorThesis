@@ -1,13 +1,21 @@
+rm(list=ls())
+
+### load functions
+source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/preparation_functions.R")
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
+
 ### load data
-GHSL_ESP_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4_ESP/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4.tif")
-GHSL_ESP_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_17_4_ESP/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_17_4.tif")
-GHSL_ESP_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8_ESP/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8.tif")
-GHSL_POL_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
-GHSL_POL_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
-GHSL_POL_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7.tif")
+
 sevilla_boundaries <- shapefile("created/GADM/Sevilla_boundaries.shp")
 krakow_boundaries <- shapefile("created/GADM/Krakow_boundaries.shp")
 dresden_boundaries <- shapefile("created/GADM/Dresden_boundaries.shp")
+
+GHSL_ESP_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4_ESP/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4.tif")
+GHSL_ESP_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_17_4_ESP/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_17_4.tif")
+GHSL_POL_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
+GHSL_POL_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
+GHSL_ESP_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8_ESP/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8.tif")
+GHSL_POL_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7.tif")
 
 GHSL_pop_ESP <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4_ESP/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4.tif")
 GHSL_pop_POL <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3_POL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3.tif")
@@ -17,17 +25,20 @@ slope_GER <- raster("original/slope/EUD_CP-SLOP_4500035000-AA_GER/EUD_CP-SLOP_45
 slope_POL <- raster("original/slope/EUD_CP-SLOP_5500035000-AA_POL/EUD_CP-SLOP_5500035000-AA.tif")
 
 
+
 ### process and save data
+
 change_Sevilla <- getChange(GHSL_ESP_1990, GHSL_ESP_2014, sevilla_boundaries, epsg = 32630, resolution = 250, threshold = 50)
 writeRaster(change_Sevilla, "created/inR/sevilla_change.tif", overwrite=T)
-change_Sevilla_30m <- getChangeFromMultitemp(GHSL_ESP_30m, sevilla_boundaries, 32630, resolution = 30)
-writeRaster(change_Sevilla_30m, "created/inR/sevilla_change_30_m.tif", overwrite=T)
 change_Krakow <- getChange(GHSL_POL_1990, GHSL_POL_2014, krakow_boundaries, epsg = 32634, resolution = 250, threshold = 50)
 writeRaster(change_Krakow, "created/inR/krakow_change.tif", overwrite=T)
-change_Krakow_30m <- getChangeFromMultitemp(GHSL_POL_30m, krakow_boundaries, 32634, resolution = 30)
-writeRaster(change_Krakow_30m, "created/inR/krakow_change_30_m.tif", overwrite=T)
 change_Dresden <- getChange(GHSL_POL_1990, GHSL_POL_2014, dresden_boundaries, epsg = 32633, resolution = 250, threshold = 50)
 writeRaster(change_Dresden, "created/inR/dresden_change.tif", overwrite=T)
+
+change_Sevilla_30m <- getChangeFromMultitemp(GHSL_ESP_30m, sevilla_boundaries, 32630, resolution = 30)
+writeRaster(change_Sevilla_30m, "created/inR/sevilla_change_30_m.tif", overwrite=T)
+change_Krakow_30m <- getChangeFromMultitemp(GHSL_POL_30m, krakow_boundaries, 32634, resolution = 30)
+writeRaster(change_Krakow_30m, "created/inR/krakow_change_30_m.tif", overwrite=T)
 change_Dresden_30m <- getChangeFromMultitemp(GHSL_POL_30m, dresden_boundaries, 32633, resolution = 30)
 writeRaster(change_Dresden_30m, "created/inR/dresden_change_30_m.tif", overwrite=T)
 
