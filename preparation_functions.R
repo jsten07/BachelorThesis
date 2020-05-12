@@ -5,28 +5,28 @@ library(sp)
 
 
 
-reprojectAndCrop <- function(ghsl, boundary, epsg, resolution) {
+reprojectAndCrop <- function(raster, boundary, epsg, resolution) {
   
   # crs in proj.4 format
   coordSys <- paste("+init=epsg:", epsg, sep = "")
   
   
   ## crop for 30 m resolution to reduce needed computation resources
-  boundaries_reproj <- spTransform(boundary, crs(ghsl))
+  boundaries_reproj <- spTransform(boundary, crs(raster))
   ext <- extent(boundaries_reproj)
-  ghsl_cropped <- crop(ghsl, c(ext[1]-500, ext[2]+500, ext[3]-500, ext[4]+500))
-  #ghsl_cropped <- crop(ghsl, boundaries_reproj)
+  raster_cropped <- crop(raster, c(ext[1]-500, ext[2]+500, ext[3]-500, ext[4]+500))
+  #raster_cropped <- crop(raster, boundaries_reproj)
   
   
   # reproject
-  reprojectedRaster <- projectRaster(ghsl_cropped, res=resolution, crs = coordSys, method = 'ngb')
+  reprojectedRaster <- projectRaster(raster_cropped, res=resolution, crs = coordSys, method = 'ngb')
   reprojectedBoundaries <- spTransform(boundary, coordSys)
   
   # crop and mask
-  ghsl_crop <- crop(reprojectedRaster,reprojectedBoundaries)
-  ghsl_bound <- mask(ghsl_crop,reprojectedBoundaries)
+  raster_crop <- crop(reprojectedRaster,reprojectedBoundaries)
+  raster_bound <- mask(raster_crop,reprojectedBoundaries)
 
-  return(ghsl_bound)
+  return(raster_bound)
 }
 
 
@@ -58,11 +58,15 @@ getChange <- function(ghsl_early, ghsl_late, boundary, epsg, resolution, thresho
 getChangeFromMultitemp <- function(ghsl, boundary, epsg, resolution) {
   ghsl_crop <- reprojectAndCrop(ghsl, boundary, epsg, resolution)
   
-  class.m <- c(0, 2, 0, 2, 4, 1, 4, 6, 0)
+  # 3-4: changed from 1990 to 2014 -> 1
+  # 0-2 & 5-6 not changed from 1990 to 2014 -> 0
+  class.m <- c(0, 2, 0,
+               2, 4, 1, 
+               4, 6, 0)
   rcl.m <- matrix(class.m, ncol = 3, byrow = T)
   
   # reclassify
-  ghsl_changed <- reclassify(ghsl_crop, rcl.m)
+  ghsl_changed <- reclassify(ghsl_crop, rcl.m, include.lowest = T)
   
   plot(ghsl_changed)
   
@@ -71,7 +75,9 @@ getChangeFromMultitemp <- function(ghsl, boundary, epsg, resolution) {
 
 
 DNtoPercentage <- function(DN) {
+  # convert pixel values to radians
   rad <- (acos(DN/250))
+  # convert radians to percentage slope
   percentage <- (tan(rad)*100)
   
   return(percentage)
@@ -87,6 +93,43 @@ citySlopeAsPercentage <- function(slope_raster, boundary, epsg) {
   
   plot(slope_per)
   return(slope_per)
+}
+
+
+reclassify_landuse <- function(landuse_raster) {
+  # 1: artificial
+  # 2: crop
+  # 3: pasture
+  # 4: forest
+  # 5: open / bare land
+  # 6: water
+  class.m <- c(111, 142, 1, 
+               211, 223, 2, 
+               241, 244, 2,
+               231, 231, 3,
+               311, 313, 4,
+               323, 324, 4,
+               321, 322, 5,
+               331, 335, 5,
+               411, 422, 5,
+               423, 523, 6)
+  rcl.m <- matrix(class.m, ncol = 3, byrow = T)
+  # +1 in the 'to' column to include this value (interval will be open on the right, to be closed left)
+  rcl.m[,2] <- rcl.m[,2]+1
+  
+  # reclassify
+  landuse_reclassified <- reclassify(landuse_raster, rcl.m, include.lowest=T, right=FALSE)
+  
+  return(landuse_reclassified)
+}
+
+
+cropAndReclassify_landuse <- function(landuse, boundary, epsg, resolution) {
+  landuse_crop <- reprojectAndCrop(landuse, boundary, epsg, resolution)
+  landuse_recl <- reclassify_landuse(landuse_crop)
+  
+  plot(landuse_recl)
+  return(landuse_recl)
 }
 
 
