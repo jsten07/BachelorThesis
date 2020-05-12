@@ -133,6 +133,33 @@ cropAndReclassify_landuse <- function(landuse, boundary, epsg, resolution) {
 }
 
 
+calc_dist_raster <- function(osm, boundaries, resolution, epsg) {
+  # reproject vector data
+  coordSys <- paste("+init=epsg:", epsg, sep = "")
+  osm_reproj <- spTransform(osm, coordSys)
+  boundaries_reproj <- spTransform(boundaries, coordSys)
+  
+  # get and increase  extent of osm (or other vector) data
+  ext <- extent(c(extent(boundaries_reproj)[1]-5000, extent(boundaries_reproj)[2]+5000,extent(boundaries_reproj)[3]-5000,extent(boundaries_reproj)[4]+5000))
+  
+  # create raster template
+  raster_template <- raster(ext, resolution = resolution, crs = coordSys)
+  
+  # rasterize vector data
+  rasterized <- rasterize(osm_reproj, raster_template, field = 1)
+  
+  # calculate euclidean distances
+  distances <- distance(rasterized)
+  
+  # clip on city boundaries
+  city_cropped <- crop(distances, boundaries_reproj)
+  city_dist <- mask(city_cropped, boundaries_reproj)
+  
+  plot(city_dist)
+  
+  return(city_dist)
+}
+
 ### load data
 
 # GHSL_ESP_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4_ESP/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4.tif")
