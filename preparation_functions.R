@@ -59,10 +59,12 @@ getChangeFromMultitemp <- function(ghsl, boundary, epsg, resolution) {
   ghsl_crop <- reprojectAndCrop(ghsl, boundary, epsg, resolution)
   
   # 3-4: changed from 1990 to 2014 -> 1
-  # 0-2 & 5-6 not changed from 1990 to 2014 -> 0
-  class.m <- c(0, 2, 0,
-               2, 4, 1, 
-               4, 6, 0)
+  # 2: not built up in any epoch -> 0
+  # 0, 1, 5, 6: no data, water, built up before
+  class.m <- c(0, 1, NA, # 0-1
+               1, 2, 0,  # 2
+               2, 4, 1,  # 3-4
+               4, 6, NA) # 5-6
   rcl.m <- matrix(class.m, ncol = 3, byrow = T)
   
   # reclassify
@@ -159,6 +161,43 @@ calc_dist_raster <- function(osm, boundaries, resolution, epsg) {
   
   return(city_dist)
 }
+
+
+calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
+  
+  # crop on boundary extent with 500 m buffer
+  boundaries_reproj <- spTransform(boundary, crs(ghsl_30m))
+  ext <- extent(boundaries_reproj)
+  ghsl_crop <- crop(ghsl_30m, c(ext[1]-500, ext[2]+500, ext[3]-500, ext[4]+500))
+  
+  # reproject
+  coordSys <- paste("+init=epsg:", epsg, sep = "")
+  ghsl_reprojected <- projectRaster(ghsl_crop, res=30, crs = coordSys, method = 'ngb')
+  reprojectedBoundaries <- spTransform(boundary, coordSys)
+  
+  ### reclassify to (not) built-up
+  # 5-6: built before 1990
+  # 0-4: not built-up berfore 1990
+  class.m <- c(0, 4, 0,
+               4, 6, 1)
+  rcl.m <- matrix(class.m, ncol = 3, byrow = T)
+  ghsl_changed <- reclassify(ghsl_reprojected, rcl.m, include.lowest = T)
+  
+  # count cells within 7 x 7 window
+  builtupCells <- focal(ghsl_changed, w=matrix(1, nc=7, nr=7))
+  
+  # crop and mask
+  raster_crop <- crop(builtupCells,reprojectedBoundaries)
+  built_density_city <- mask(raster_crop,reprojectedBoundaries)
+  
+  plot(built_density_city)
+
+  return(built_density_city)
+  
+  #density_test <- calc_builtup_density(GHSL_POL_30m, dresden_boundaries, 32633)
+  #writeRaster(density_test, "created/test/dresden_density_test.tif", overwrite=T)
+}
+
 
 ### load data
 
