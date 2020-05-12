@@ -26,18 +26,21 @@ slope_GER <- raster("original/slope/EUD_CP-SLOP_4500035000-AA_GER/EUD_CP-SLOP_45
 slope_POL <- raster("original/slope/EUD_CP-SLOP_5500035000-AA_POL/EUD_CP-SLOP_5500035000-AA.tif")
 
 dresden_roads <- shapefile("created/OSM/Dresden_mRoads.shp")
+dresden_primary_roads <- shapefile("created/OSM/Dresden_pRoads.shp")
 dresden_river <- shapefile("created/OSM/Dresden_mRiver.shp")
 dresden_tStations <- shapefile("created/OSM/Dresden_trainStation_singlepart.shp")
 dresden_center <- shapefile("created/OSM/Dresden_townhall.shp")
 dresden_airport <- shapefile("created/OSM/Dresden_airport.shp")
 
 sevilla_roads <- shapefile("created/OSM/Sevilla_mRoads.shp")
+sevilla_primary_roads <- shapefile("created/OSM/Sevilla_pRoads.shp")
 sevilla_river <- shapefile("created/OSM/Sevilla_mRiver.shp")
 sevilla_tStations <- shapefile("created/OSM/Sevilla_trainStation_singlepart.shp")
 sevilla_center <- shapefile("created/OSM/Sevilla_townhall.shp")
 sevilla_airport <- shapefile("created/OSM/Sevilla_airport.shp")
 
 krakow_roads <- shapefile("created/OSM/Krakow_mRoads.shp")
+krakow_primary_roads <- shapefile("created/OSM/Krakow_pRoads.shp")
 krakow_river <- shapefile("created/OSM/Krakow_mRiver.shp")
 krakow_tStations <- shapefile("created/OSM/Krakow_trainStation_singlepart.shp")
 krakow_center <- shapefile("created/OSM/Krakow_townhall.shp")
@@ -98,6 +101,8 @@ writeRaster(landuse_Krakow, "created/landuse/krakow_landuse.tif", overwrite=T)
 
 dresden_road_dist <- calc_dist_raster(dresden_roads, dresden_boundaries, 250, 32633)
 writeRaster(dresden_road_dist, "created/distances/dresden_roads_250m.tif", overwrite=T)
+dresden_p_road_dist <- calc_dist_raster(dresden_primary_roads, dresden_boundaries, 250, 32633)
+writeRaster(dresden_p_road_dist, "created/distances/dresden_primary_roads_250m.tif", overwrite=T)
 dresden_river_dist <- calc_dist_raster(dresden_river, dresden_boundaries, 250, 32633)
 writeRaster(dresden_river_dist, "created/distances/dresden_river_250m.tif", overwrite=T)
 dresden_tStation_dist <- calc_dist_raster(dresden_tStations, dresden_boundaries, 250, 32633)
@@ -111,6 +116,8 @@ writeRaster(dresden_center_dist, "created/distances/dresden_center_250m.tif", ov
 
 sevilla_road_dist <- calc_dist_raster(sevilla_roads, sevilla_boundaries, 250, 32630)
 writeRaster(sevilla_road_dist, "created/distances/sevilla_roads_250m.tif", overwrite=T)
+sevilla_p_road_dist <- calc_dist_raster(sevilla_primary_roads, sevilla_boundaries, 250, 32630)
+writeRaster(sevilla_p_road_dist, "created/distances/sevilla_primary_roads_250m.tif", overwrite=T)
 sevilla_river_dist <- calc_dist_raster(sevilla_river, sevilla_boundaries, 250, 32630)
 writeRaster(sevilla_river_dist, "created/distances/sevilla_river_250m.tif", overwrite=T)
 sevilla_tStation_dist <- calc_dist_raster(sevilla_tStations, sevilla_boundaries, 250, 32630)
@@ -124,6 +131,8 @@ writeRaster(sevilla_center_dist, "created/distances/sevilla_center_250m.tif", ov
 
 krakow_road_dist <- calc_dist_raster(krakow_roads, krakow_boundaries, 250, 32634)
 writeRaster(krakow_road_dist, "created/distances/krakow_roads_250m.tif", overwrite=T)
+krakow_p_road_dist <- calc_dist_raster(krakow_primary_roads, krakow_boundaries, 250, 32634)
+writeRaster(krakow_p_road_dist, "created/distances/krakow_primary_roads_250m.tif", overwrite=T)
 krakow_river_dist <- calc_dist_raster(krakow_river, krakow_boundaries, 250, 32634)
 writeRaster(krakow_river_dist, "created/distances/krakow_river_250m.tif", overwrite=T)
 krakow_tStation_dist <- calc_dist_raster(krakow_tStations, krakow_boundaries, 250, 32634)
