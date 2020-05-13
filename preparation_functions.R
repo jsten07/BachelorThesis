@@ -20,13 +20,13 @@ reprojectAndCrop <- function(raster, boundary, epsg, resolution) {
   
   # reproject
   reprojectedRaster <- projectRaster(raster_cropped, res=resolution, crs = coordSys, method = 'ngb')
-  reprojectedBoundaries <- spTransform(boundary, coordSys)
+  # reprojectedBoundaries <- spTransform(boundary, coordSys)
   
   # crop and mask
-  raster_crop <- crop(reprojectedRaster,reprojectedBoundaries)
-  raster_bound <- mask(raster_crop,reprojectedBoundaries)
+  # raster_crop <- crop(reprojectedRaster,reprojectedBoundaries)
+  # raster_bound <- mask(raster_crop,reprojectedBoundaries)
 
-  return(raster_bound)
+  return(reprojectedRaster)
 }
 
 
@@ -154,8 +154,10 @@ calc_dist_raster <- function(osm, boundaries, resolution, epsg) {
   distances <- distance(rasterized)
   
   # clip on city boundaries
-  city_cropped <- crop(distances, boundaries_reproj)
-  city_dist <- mask(city_cropped, boundaries_reproj)
+  #city_cropped <- crop(distances, boundaries_reproj)
+  #city_dist <- mask(city_cropped, boundaries_reproj)
+  
+  city_dist <- reprojectAndCrop(distances, boundaries, epsg, resolution)
   
   plot(city_dist)
   
@@ -165,15 +167,16 @@ calc_dist_raster <- function(osm, boundaries, resolution, epsg) {
 
 calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
   
-  # crop on boundary extent with 500 m buffer
-  boundaries_reproj <- spTransform(boundary, crs(ghsl_30m))
-  ext <- extent(boundaries_reproj)
-  ghsl_crop <- crop(ghsl_30m, c(ext[1]-500, ext[2]+500, ext[3]-500, ext[4]+500))
-  
-  # reproject
-  coordSys <- paste("+init=epsg:", epsg, sep = "")
-  ghsl_reprojected <- projectRaster(ghsl_crop, res=30, crs = coordSys, method = 'ngb')
-  reprojectedBoundaries <- spTransform(boundary, coordSys)
+  # # crop on boundary extent with 500 m buffer
+  # boundaries_reproj <- spTransform(boundary, crs(ghsl_30m))
+  # ext <- extent(boundaries_reproj)
+  # ghsl_crop <- crop(ghsl_30m, c(ext[1]-500, ext[2]+500, ext[3]-500, ext[4]+500))
+  # 
+  # # reproject
+  # coordSys <- paste("+init=epsg:", epsg, sep = "")
+  # ghsl_reprojected <- projectRaster(ghsl_crop, res=30, crs = coordSys, method = 'ngb')
+  # reprojectedBoundaries <- spTransform(boundary, coordSys)
+  ghsl_reprojected <- reprojectAndCrop(ghsl_30m, boundary, epsg, 30)
   
   ### reclassify to (not) built-up
   # 5-6: built before 1990
@@ -186,13 +189,13 @@ calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
   # count cells within 7 x 7 window
   builtupCells <- focal(ghsl_changed, w=matrix(1, nc=7, nr=7))
   
-  # crop and mask
-  raster_crop <- crop(builtupCells,reprojectedBoundaries)
-  built_density_city <- mask(raster_crop,reprojectedBoundaries)
+  # # crop and mask
+  # raster_crop <- crop(builtupCells,reprojectedBoundaries)
+  # built_density_city <- mask(raster_crop,reprojectedBoundaries)
   
-  plot(built_density_city)
+  plot(builtupCells)
 
-  return(built_density_city)
+  return(builtupCells)
 }
 
 
@@ -223,6 +226,12 @@ create_stack <- function(ghsl_30m, epsg, boundary, ghsl_pop, slope, landuse, roa
   dist_airport <- projectRaster(dist_airport, change)
   
   change_stack <- stack(change, builtup_density, pop_density, slope, landuse, dist_mRoad, dist_pRoad, dist_river, dist_train, dist_center, dist_airport)
+  
+  # crop and mask
+  coordSys <- paste("+init=epsg:", epsg, sep = "")
+  boundaries_reproj <- spTransform(boundary, coordSys)
+  change_stack <- crop(change_stack, boundaries_reproj)
+  change_stack <- mask(change_stack, boundaries_reproj)
   
   names(change_stack) <- c("change", "built_dens", "pop_dens", "slope", "landuse", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist")
   
