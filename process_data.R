@@ -97,6 +97,15 @@ writeRaster(landuse_Sevilla, "created/landuse/sevilla_landuse.tif", overwrite=T)
 landuse_Krakow <- cropAndReclassify_landuse(landuse, krakow_boundaries, 32634, 100)
 writeRaster(landuse_Krakow, "created/landuse/krakow_landuse.tif", overwrite=T)
 
+# builtup density
+
+built_density_Dresden <- calc_builtup_density(GHSL_POL_30m, dresden_boundaries, 32633)
+writeRaster(built_density_Dresden, "created/builtup_density/dresden_density.tif", overwrite=T)
+built_density_Krakow <- calc_builtup_density(GHSL_POL_30m, krakow_boundaries, 32634)
+writeRaster(built_density_Krakow, "created/builtup_density/krakow_density.tif", overwrite=T)
+built_density_Sevilla <- calc_builtup_density(GHSL_ESP_30m, sevilla_boundaries, 32630)
+writeRaster(built_density_Sevilla, "created/builtup_density/sevilla_density.tif", overwrite=T)
+
 # distances dresden
 
 dresden_road_dist <- calc_dist_raster(dresden_roads, dresden_boundaries, 250, 32633)

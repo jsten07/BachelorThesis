@@ -193,9 +193,6 @@ calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
   plot(built_density_city)
 
   return(built_density_city)
-  
-  #density_test <- calc_builtup_density(GHSL_POL_30m, dresden_boundaries, 32633)
-  #writeRaster(density_test, "created/test/dresden_density_test.tif", overwrite=T)
 }
 
 
