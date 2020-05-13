@@ -196,6 +196,39 @@ calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
 }
 
 
+create_stack <- function(ghsl_30m, epsg, boundary, ghsl_pop, slope, landuse, road, primary_road, river, train_stations, city_center, airport) {
+  
+  change <- getChangeFromMultitemp(ghsl_30m, boundary, epsg, 30)
+  
+  builtup_density <- calc_builtup_density(ghsl_30m, boundary, epsg)
+  pop_density <- reprojectAndCrop(ghsl_pop, boundary, epsg, 250)
+  slope <- citySlopeAsPercentage(slope, boundary, epsg)
+  landuse <- cropAndReclassify_landuse(landuse, boundary, epsg, 100)
+  dist_mRoad <- calc_dist_raster(road, boundary, 120, epsg)
+  dist_pRoad <- calc_dist_raster(primary_road, boundary, 120, epsg)
+  dist_river <- calc_dist_raster(river, boundary, 120, epsg)
+  dist_train <- calc_dist_raster(train_stations, boundary, 120, epsg)
+  dist_center <- calc_dist_raster(city_center, boundary, 120, epsg)
+  dist_airport <- calc_dist_raster(airport, boundary, 120, epsg)
+  
+  builtup_density <- projectRaster(builtup_density, change)
+  pop_density <- projectRaster(pop_density, change)
+  slope <- projectRaster(slope, change)
+  landuse <- projectRaster(landuse, change, method = 'ngb')
+  dist_mRoad <- projectRaster(dist_mRoad, change)
+  dist_pRoad <- projectRaster(dist_pRoad, change)
+  dist_river <- projectRaster(dist_river, change)
+  dist_train <- projectRaster(dist_train, change)
+  dist_center <- projectRaster(dist_center, change)
+  dist_airport <- projectRaster(dist_airport, change)
+  
+  change_stack <- stack(change, builtup_density, pop_density, slope, landuse, dist_mRoad, dist_pRoad, dist_river, dist_train, dist_center, dist_airport)
+  
+  names(change_stack) <- c("change", "built_dens", "pop_dens", "slope", "landuse", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist")
+  
+  return(change_stack)
+}
+
 ### load data
 
 # GHSL_ESP_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4_ESP/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_17_4.tif")

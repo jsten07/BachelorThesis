@@ -50,6 +50,19 @@ landuse <- raster("original/land cover/clc2006_clc2000_v2018_20_raster100m/CLC20
 
 
 ########################################################################################
+# create stack and save grid
+
+stack <- create_stack(GHSL_POL_30m, 32634, krakow_boundaries, GHSL_pop_POL, slope_POL, landuse, krakow_roads, krakow_primary_roads, krakow_river, krakow_tStations, krakow_center, krakow_airport)
+
+stack.df <- as.data.frame(getValues(stack), na.rm=TRUE)
+
+write.csv(stack.df, "created/stack/krakow.csv")
+
+writeRaster(stack, "created/stack/krakow.grd")
+
+
+
+########################################################################################
 ### process and save data
 
 # 250 m change
