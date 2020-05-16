@@ -50,28 +50,28 @@ landuse <- raster("original/land cover/clc2006_clc2000_v2018_20_raster100m/CLC20
 
 
 ########################################################################################
-# create stack and save grid
+# create stack and save grid and csv
 
 stack_sevilla <- create_stack(GHSL_ESP_30m, 32630, sevilla_boundaries, GHSL_pop_ESP, slope_ESP, landuse, 
                               sevilla_roads, sevilla_primary_roads, sevilla_river, sevilla_tStations, sevilla_center, sevilla_airport)
-stack_sevilla.df <- as.data.frame(getValues(stack))
+stack_sevilla.df <- as.data.frame(getValues(stack_sevilla))
 stack_sevilla.df_noNA <- stack_sevilla.df[which(stack_sevilla.df$change!="NA"), ]
-write.csv(stack.df, "created/stack/sevilla.csv")
-writeRaster(stack, "created/stack/sevilla.grd", overwrite = TRUE)
+write.csv(stack_sevilla.df_noNA, "created/stack/sevilla.csv")
+writeRaster(stack_sevilla, "created/stack/sevilla.grd", overwrite = TRUE)
 
 stack_dresden <- create_stack(GHSL_POL_30m, 32633, dresden_boundaries, GHSL_pop_POL, slope_GER, landuse, 
                               dresden_roads, dresden_primary_roads, dresden_river, dresden_tStations, dresden_center, dresden_airport)
-stack_dresden.df <- as.data.frame(getValues(stack))
+stack_dresden.df <- as.data.frame(getValues(stack_dresden))
 stack_dresden.df_noNA <- stack_dresden.df[which(stack_dresden.df$change!="NA"), ]
-write.csv(stack.df, "created/stack/dresden.csv")
-writeRaster(stack, "created/stack/dresden.grd", overwrite = TRUE)
+write.csv(stack_dresden.df_noNA, "created/stack/dresden.csv")
+writeRaster(stack_dresden, "created/stack/dresden.grd", overwrite = TRUE)
 
-stack_krakow <- create_stack(GHSL_POL_30m, 32633, krakow_boundaries, GHSL_pop_POL, slope_POL, landuse, 
+stack_krakow <- create_stack(GHSL_POL_30m, 32634, krakow_boundaries, GHSL_pop_POL, slope_POL, landuse, 
                               krakow_roads, krakow_primary_roads, krakow_river, krakow_tStations, krakow_center, krakow_airport)
-stack_krakow.df <- as.data.frame(getValues(stack))
+stack_krakow.df <- as.data.frame(getValues(stack_krakow))
 stack_krakow.df_noNA <- stack_krakow.df[which(stack_krakow.df$change!="NA"), ]
-write.csv(stack.df, "created/stack/krakow.csv")
-writeRaster(stack, "created/stack/krakow.grd", overwrite = TRUE)
+write.csv(stack_krakow.df_noNA, "created/stack/krakow.csv")
+writeRaster(stack_krakow, "created/stack/krakow.grd", overwrite = TRUE)
 
 
 
