@@ -27,13 +27,17 @@ choose_samples <- function(raster_stack, sample_rate) {
   sample_amount <- as.integer(change_count/sample_rate)
   
   # samplechange records
-  change_samples <- sample_n(df_noNA[which(df_noNA$change=="1"),], size=sample_amount)
+  df_change <- df_noNA[which(df_noNA$change=="1"),]
+  change_samples <- df_change[sample(nrow(df_change), sample_amount),]
+  
   
   # sample no change records
-  noChange_samples <- sample_n(df_noNA[which(df_noNA$change=="0"),], size=sample_amount)
+  df_nochange <- df_noNA[which(df_noNA$change=="0"),]
+  nochange_samples <- df_nochange[sample(nrow(df_nochange), sample_amount),]
+
   
   # join data frames
-  samples <- rbind(change_samples, noChange_samples)
+  samples <- rbind(change_samples, nochange_samples)
   
   return(samples)
   
@@ -84,6 +88,13 @@ write.csv(sevilla_samples_sp, "created/samples/sevilla_samples_sp.csv")
 # ######################################################################################################
 # # test stuff
 # ######################################################################################################
+
+# noChange_samples <- sample_n(df_noNA[which(df_noNA$change=="0"),], size=sample_amount)
+# above does not keep the original cell number as row number
+
+# change_samples <- sample_n(df_noNA[which(df_noNA$change=="1"),], size=sample_amount)
+# above does not keep the original cell number as row number
+
 # 
 # 
 # ### load grids
