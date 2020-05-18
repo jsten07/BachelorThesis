@@ -193,9 +193,11 @@ calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
   # raster_crop <- crop(builtupCells,reprojectedBoundaries)
   # built_density_city <- mask(raster_crop,reprojectedBoundaries)
   
-  plot(builtupCells)
+  builtupDensity <- builtupCells/48*100
+  
+  plot(builtupDensity)
 
-  return(builtupCells)
+  return(builtupDensity)
 }
 
 
