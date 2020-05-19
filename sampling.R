@@ -3,8 +3,10 @@ rm(list=ls())
 library(raster)
 library(sp)
 library(dplyr)
+library(spdep)
+library(lctools)
 
-set.seed(1)
+set.seed(21)
 
 
 # source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/preparation_functions.R")
@@ -59,7 +61,7 @@ choose_samples_spatial <- function(raster_stack, sample_rate) {
   sample_size <- as.integer(notNA_count/sample_rate)
   
   # spatial sampling
-  samples <- as.data.frame(sampleRandom(raster_stack, size = sample_size, na.rm = TRUE, cells = TRUE, rowcol = TRUE, xy = TRUE, sp = TRUE))
+  samples <- as.data.frame(sampleRandom(raster_stack, size = sample_size, na.rm = TRUE, cells = TRUE, rowcol = TRUE, xy = TRUE))
   
   #
   change_count <- as.integer(count(samples[which(samples$change=="1"),]))
@@ -74,20 +76,90 @@ choose_samples_spatial <- function(raster_stack, sample_rate) {
 }
 
 
-dresden_samples_sp <- choose_samples_spatial(stack_dresden, 25)
+dresden_samples_sp <- choose_samples_spatial(stack_dresden, 100)
 write.csv(dresden_samples_sp, "created/samples/dresden_samples_sp.csv")
-krakow_samples_sp <- choose_samples_spatial(stack_krakow, 25)
+krakow_samples_sp <- choose_samples_spatial(stack_krakow, 100)
 write.csv(krakow_samples_sp, "created/samples/krakow_samples_sp.csv")
-sevilla_samples_sp <- choose_samples_spatial(stack_sevilla, 25)
+sevilla_samples_sp <- choose_samples_spatial(stack_sevilla, 100)
 write.csv(sevilla_samples_sp, "created/samples/sevilla_samples_sp.csv")
 
 
+########################################################################################################
+# Moran's I
+########################################################################################################
 
 
+calc_moransI <- function(samples) {
+  # get coordinates as matrix
+  coords <- as.matrix(cbind(samples$x, samples$y))
+  
+  # identify neighbours
+  k1 <- knn2nb(knearneigh(coords))
+  k1dists <- unlist(nbdists(k1, coords))
+  # summary(k1dists)
+  nb_maxdist <- dnearneigh(coords, 0, max(k1dists))
+  print(nb_maxdist)
+  
+  # get neighbour list
+  lw <- nb2listw(nb_maxdist,zero.policy = T)
+  
+  # calculate Morans I
+  morans <- moran.test(samples$change, lw, randomisation = F, alternative = "two.sided", zero.policy = T)
+  
+  return(morans)
+}
+
+
+
+seed <- 22
+set.seed(seed)
+samples_sp <- choose_samples_spatial(stack_sevilla, 25)
+calc_moransI(samples_sp)
+set.seed(seed)
+samples <- choose_samples(stack_sevilla, 25)
+calc_moransI(samples)
+
+
+# without sampling
+df <- as.data.frame(stack_krakow, optional = T, xy = T)
+df_noNA <- df[which(df$change!="NA"), ]
+
+calc_moransI(df_noNA)
 
 # ######################################################################################################
 # # test stuff
 # ######################################################################################################
+
+
+
+# samples <- krakow_samples_sp
+# # samples <- 
+# 
+# # inverse distace matrix
+# samples.dists <- as.matrix(dist(cbind(samples$x, samples$y)))
+# samples.dists.inv <- 1/(samples.dists/1000)
+# diag(samples.dists.inv) <- 0
+# 
+# samples.dists.inv[1:10,1:10]
+# 
+# Moran.I(samples$change, samples.dists.inv, alternative="two.sided")
+# 
+# moransI(cbind(samples$x/1000, samples$y/1000), 5, samples$change, WType = "Binary")
+# 
+# 
+# coords <- as.matrix(cbind(samples$x, samples$y))
+# 
+# k1 <- knn2nb(knearneigh(coords))
+# k1dists <- unlist(nbdists(k1, coords))
+# summary(k1dists)
+# 
+# nb_maxdist <- dnearneigh(coords, 0, max(k1dists))
+# print(nb_maxdist)
+# 
+# lw <- nb2listw(nb_maxdist)
+# 
+# moran.test(samples$landuse, lw, randomisation = F, alternative = "greater")
+
 
 # noChange_samples <- sample_n(df_noNA[which(df_noNA$change=="0"),], size=sample_amount)
 # above does not keep the original cell number as row number
