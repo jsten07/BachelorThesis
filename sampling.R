@@ -5,6 +5,7 @@ library(sp)
 library(dplyr)
 library(spdep)
 library(lctools)
+library(spcosa)
 
 set.seed(21)
 
@@ -17,8 +18,28 @@ stack_dresden <- stack("created/stack/dresden.grd")
 stack_krakow <- stack("created/stack/krakow.grd")
 stack_sevilla <- stack("created/stack/sevilla.grd")
 
+dresden_boundaries <- shapefile("created/GADM/Dresden_boundaries.shp")
 
-### TODO: save pixel number
+
+
+### convert grid / stack to data.frame and remove NA values
+create_df_without_NA <- function(stack) {
+  df <- as.data.frame(stack, optional = T, xy = T)
+  df_noNA <- df[which(df$change!="NA"), ]
+  
+  return(df_noNA)
+}
+
+write.csv(create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
+write.csv(create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
+write.csv(create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
+
+
+########################################################################################
+# random sampling
+########################################################################################
+
+### randomly choose 1/sample_rate of changed and not changed data as samples and join them to one dataset
 choose_samples <- function(raster_stack, sample_rate) {
   # convert stack to data frame
   df <- as.data.frame(raster_stack, optional = T, xy = T)
@@ -46,15 +67,15 @@ choose_samples <- function(raster_stack, sample_rate) {
 }
 
 
-dresden_samples <- choose_samples(stack_dresden, 25)
+dresden_samples <- choose_samples(stack_dresden, 50)
 write.csv(dresden_samples, "created/samples/dresden_samples.csv")
-krakow_samples <- choose_samples(stack_krakow, 25)
+krakow_samples <- choose_samples(stack_krakow, 50)
 write.csv(krakow_samples, "created/samples/krakow_samples.csv")
-sevilla_samples <- choose_samples(stack_sevilla, 25)
+sevilla_samples <- choose_samples(stack_sevilla, 50)
 write.csv(sevilla_samples, "created/samples/sevilla_samples.csv")
 
 
-# sample records with spatial sampling first
+### first sample all records with sampleRandom (spatially), then choose same amount of not changed as was generated for changed
 choose_samples_spatial <- function(raster_stack, sample_rate) {
   # count not NA records
   notNA_count <- freq(raster_stack$change)[1,2]+freq(raster_stack$change)[2,2]
@@ -82,6 +103,59 @@ krakow_samples_sp <- choose_samples_spatial(stack_krakow, 100)
 write.csv(krakow_samples_sp, "created/samples/krakow_samples_sp.csv")
 sevilla_samples_sp <- choose_samples_spatial(stack_sevilla, 100)
 write.csv(sevilla_samples_sp, "created/samples/sevilla_samples_sp.csv")
+
+
+
+########################################################################################################
+# stratified sampling
+########################################################################################################
+
+write.csv(sampleStratified(stack_dresden$change, size = 500, xy = TRUE), "created/samples/test_stratified.csv")
+
+# systematic sampling
+# choose every n-th record
+sampleSystematic <- function(stack, window_size) {
+  
+  df <- as.data.frame(stack, optional = T, xy = T)
+  
+  # initialize sample data frame
+  samples <- df[1,]
+  
+  # get every n*n-th record (n = window_size)
+  row_iterations <- c(1:round(nrow(stack)/window_size))
+  column_iterations <- c(1:round(ncol(stack)/window_size))
+  
+  for (i in row_iterations) {
+    # dont start every row with the first, third or similar pixel, but with random 
+    s <- sample(1:window_size, 1)
+    for (j in column_iterations){
+      # choose cell number
+      cell <- i * (window_size - 2) * ncol(stack) + j * window_size + s
+      samples[nrow(samples)+1,] <- df[cell,]
+    }
+  }
+  
+  # remove NA records
+  samples <- samples[which(samples$change!="NA"), ]
+  
+  # remove excessive not changed samples
+  changed <- samples[which(samples$change=="1"), ]
+  change_amount <- nrow(changed)
+  not_changed <- samples[which(samples$change=="0"), ]
+  not_changed <- not_changed[sample(nrow(not_changed), change_amount),]
+  
+  samples <- rbind(changed, not_changed)
+  
+  return(samples)
+}
+
+dresden_syst <- sampleSystematic(stack_dresden, 10)
+
+# create new raster in same size as others
+# create windows depending ob sample_rate
+# sampleStratified on window value
+# connect sampled cell number to data 
+
 
 
 ########################################################################################################
