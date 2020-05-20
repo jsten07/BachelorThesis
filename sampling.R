@@ -150,13 +150,76 @@ sampleSystematic <- function(stack, window_size) {
 }
 
 dresden_syst <- sampleSystematic(stack_dresden, 10)
+write.csv(dresden_syst, "created/samples/dresden_syst.csv")
 
 # create new raster in same size as others
 # create windows depending ob sample_rate
 # sampleStratified on window value
 # connect sampled cell number to data 
 
+stratified_sampling <- function(stack, window_size = 5) {
+  # width of raster (amount of columns)
+  raster_cols <- ncol(stack)
+  
+  df <- as.data.frame(stack, xy = T)
+  df_noNA <- df[which(df$change!="NA"), ]
+  cell_no <- as.integer(row.names(df_noNA))
+  
+  # calc strata numbers 
+  strata <- calc_strata_no(cell_no, window_size, raster_cols)
+  df_noNA["strata"] <- strata     # and add to data frame
+  
+  # sample dataframe stratified
+  
+  ######################################################
+  # sampleStratified() just works for raster data
+  ######################################################
+  
+  return(df_noNA)
+  
+} 
 
+
+# cell_vector: vector with numbers, representing cell numbers of a raster
+# window_size: divide raster in n x n windows; n = window_size
+# raster_cols: width of the raster
+# return: strata number for every raster cell
+calc_strata_no <- function(cell_vector, window_size, raster_cols){
+  cells <- (ceiling((cell_vector%%raster_cols)/window_size)
+            + ceiling((cell_vector/raster_cols)/window_size) * ceiling(raster_cols/window_size))
+  
+  return(cells)
+}
+
+
+
+# just take every nth record
+# choose sample way: rate(choose every n record) or amount(choose amount of samples)
+sampleEasy <- function(stack, way = "rate", size = 25) {
+  df <- as.data.frame(stack, xy = T)
+  df_noNA <- df[which(df$change!="NA"), ]
+  
+  df.change <- df[which(df$change=="1"), ]
+  df.nochange <- df[which(df$change=="0"), ]
+  
+  if(way == "amount") {
+    size <- size/2
+    size <- nrow(df.change)/size
+  }
+  
+  s <- sample(1:size, 1)
+  df.change.new <- df.change[seq(s, nrow(df.change), size), ]
+  df.nochange.new <- df.nochange[seq(s, nrow(df.nochange), nrow(df.nochange)/nrow(df.change.new)), ]
+  
+  df.new <- rbind(df.change.new, df.nochange.new)
+  
+  return(df.new)
+}
+
+nrow(easy <- sampleEasy(stack_dresden, way = "amount", size = 890))
+calc_moransI(easy)
+
+write.csv(easy, "created/samples/dresden_easy.csv")
 
 ########################################################################################################
 # Moran's I
