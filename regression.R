@@ -11,6 +11,8 @@ data.k.a <- read.csv("krakow_all.csv")
 data.d.a <- read.csv("dresden_all.csv")
 data.s.a <- read.csv("sevilla_all.csv")
 
+data.d.sys <- read.csv("dresden_syst.csv")
+
 str(data)
 data[1:5,]
 summary(data)
@@ -64,6 +66,12 @@ summary(glm.t.k.a)
 summary(glm.t.d.a)
 summary(glm.t.s.a)
 
+# systematic sampled
+glm.t.dsys <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
+                    mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.d.sys)
+summary(glm.t.dsys)
+glm.t.dsys.s <- glm(formula = change ~ factor(landuse) +  pop_dens + pRoads_dist, data = data.d.sys)
+summary(glm.t.dsys.s)
 
 # significant factors
 glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
@@ -118,6 +126,6 @@ logit.roc.plot <- function(r, title="ROC curve") {
   title(main = title)
 }
 
-r <- logit.roc(glm.t.k.s, steps=50)
+r <- logit.roc(glm.t.dsys.s, steps=100)
 logit.roc.area(r)
 logit.roc.plot(r, "ROC for tenure, roads, settlements")

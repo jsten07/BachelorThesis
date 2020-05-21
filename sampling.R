@@ -6,6 +6,7 @@ library(dplyr)
 library(spdep)
 library(lctools)
 library(spcosa)
+library(splitstackshape)
 
 set.seed(21)
 
@@ -162,23 +163,37 @@ stratified_sampling <- function(stack, window_size = 5) {
   raster_cols <- ncol(stack)
   
   df <- as.data.frame(stack, xy = T)
-  df_noNA <- df[which(df$change!="NA"), ]
-  cell_no <- as.integer(row.names(df_noNA))
+  cell_no <- as.integer(row.names(df))
   
   # calc strata numbers 
   strata <- calc_strata_no(cell_no, window_size, raster_cols)
-  df_noNA["strata"] <- strata     # and add to data frame
+  df["strata"] <- strata     # and add to data frame
   
   # sample dataframe stratified
+  df.strat <- stratified(df, c("strata"), size = 1, keep.rownames = TRUE)
+  
+  # remove NA values
+  samples <- df.strat[which(df.strat$change!="NA"), ]
+  sampleschange <- samples[which(samples$change=="1"), ]
+  samplesNochange <- samples[which(samples$change=="0"), ]
+  samplesNochange <- samplesNochange[sample(nrow(samplesNochange), nrow(sampleschange)),]
+  
+  samples <- rbind(sampleschange, samplesNochange)
+  
+  # !!! general problem: samples in strata with few records overrepresented
   
   ######################################################
   # sampleStratified() just works for raster data
   ######################################################
+  # possibility to use stratified() method in fifer package
+  ######################################################
   
-  return(df_noNA)
+  return(samples)
   
 } 
 
+samples <- stratified_sampling(stack_dresden, window_size = 5)
+write.csv(samples, "created/samples/sevilla_strat_test.csv")
 
 # cell_vector: vector with numbers, representing cell numbers of a raster
 # window_size: divide raster in n x n windows; n = window_size
@@ -216,10 +231,9 @@ sampleEasy <- function(stack, way = "rate", size = 25) {
   return(df.new)
 }
 
-nrow(easy <- sampleEasy(stack_dresden, way = "amount", size = 890))
-calc_moransI(easy)
-
-write.csv(easy, "created/samples/dresden_easy.csv")
+write.csv((dresden_samples <- sampleEasy(stack_dresden, way="amount", size = 1000)), "created/samples/dresden_easySamples.csv")
+write.csv((krakow_samples <- sampleEasy(stack_krakow, way="amount", size = 1000)), "created/samples/krakow_easySamples.csv")
+write.csv((sevilla_samples <- sampleEasy(stack_sevilla, way="amount", size = 1000)), "created/samples/sevilla_easySamples.csv")
 
 ########################################################################################################
 # Moran's I
