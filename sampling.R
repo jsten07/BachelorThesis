@@ -1,11 +1,11 @@
 rm(list=ls())
 
-library(raster)
-library(sp)
-library(dplyr)
+#library(raster)
+#library(sp)
+#library(dplyr)
 library(spdep)
-library(lctools)
-library(spcosa)
+#library(lctools)
+#library(spcosa)
 library(splitstackshape)
 
 set.seed(21)
@@ -19,7 +19,63 @@ stack_dresden <- stack("created/stack/dresden.grd")
 stack_krakow <- stack("created/stack/krakow.grd")
 stack_sevilla <- stack("created/stack/sevilla.grd")
 
-dresden_boundaries <- shapefile("created/GADM/Dresden_boundaries.shp")
+
+
+###################################################################################################################
+# 820 - 878 samples
+# Morans I: 0.25 - 0.29
+###################################################################################################################
+set.seed(13)
+write.csv((samples_dresden <- stratified_sampling(stack_dresden, 5)), ("created/samples/stratified/dresden.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 6)), ("created/samples/stratified/sevilla.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 9)), ("created/samples/stratified/krakow.csv"))
+
+
+
+
+###################################################################################################################
+# 860 - 2728 samples
+# Morans I: 0.28.- 0.37
+###################################################################################################################
+set.seed(13)
+write.csv((samples_dresden <- stratified_sampling(stack_dresden, 5)), ("created/samples/stratified/dresden.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 5)), ("created/samples/stratified/sevilla.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 5)), ("created/samples/stratified/krakow.csv"))
+
+
+
+###################################################################################################################
+# 494 - 1332 samples
+# Morans I: 0.26- 0.40
+###################################################################################################################
+set.seed(13)
+write.csv((samples_dresden <- stratified_sampling(stack_dresden, 7)), ("created/samples/stratified/dresden.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 7)), ("created/samples/stratified/sevilla.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 7)), ("created/samples/stratified/krakow.csv"))
+
+
+
+str(samples_dresden)
+str(samples_sevilla)
+str(samples_krakow)
+
+calc_moransI(samples_dresden)
+calc_moransI(samples_sevilla)
+calc_moransI(samples_krakow)
+
+
+
+
+
+
+
+
+
+
+
+########################################################################################
+######################### functions ####################################################
+########################################################################################
 
 
 
@@ -31,9 +87,9 @@ create_df_without_NA <- function(stack) {
   return(df_noNA)
 }
 
-write.csv(create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
-write.csv(create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
-write.csv(create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
+# write.csv(create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
+# write.csv(create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
+# write.csv(create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
 
 
 ########################################################################################
@@ -68,12 +124,12 @@ choose_samples <- function(raster_stack, sample_rate) {
 }
 
 
-dresden_samples <- choose_samples(stack_dresden, 50)
-write.csv(dresden_samples, "created/samples/dresden_samples.csv")
-krakow_samples <- choose_samples(stack_krakow, 50)
-write.csv(krakow_samples, "created/samples/krakow_samples.csv")
-sevilla_samples <- choose_samples(stack_sevilla, 50)
-write.csv(sevilla_samples, "created/samples/sevilla_samples.csv")
+# dresden_samples <- choose_samples(stack_dresden, 50)
+# write.csv(dresden_samples, "created/samples/dresden_samples.csv")
+# krakow_samples <- choose_samples(stack_krakow, 50)
+# write.csv(krakow_samples, "created/samples/krakow_samples.csv")
+# sevilla_samples <- choose_samples(stack_sevilla, 50)
+# write.csv(sevilla_samples, "created/samples/sevilla_samples.csv")
 
 
 ### first sample all records with sampleRandom (spatially), then choose same amount of not changed as was generated for changed
@@ -98,12 +154,12 @@ choose_samples_spatial <- function(raster_stack, sample_rate) {
 }
 
 
-dresden_samples_sp <- choose_samples_spatial(stack_dresden, 100)
-write.csv(dresden_samples_sp, "created/samples/dresden_samples_sp.csv")
-krakow_samples_sp <- choose_samples_spatial(stack_krakow, 100)
-write.csv(krakow_samples_sp, "created/samples/krakow_samples_sp.csv")
-sevilla_samples_sp <- choose_samples_spatial(stack_sevilla, 100)
-write.csv(sevilla_samples_sp, "created/samples/sevilla_samples_sp.csv")
+# dresden_samples_sp <- choose_samples_spatial(stack_dresden, 100)
+# write.csv(dresden_samples_sp, "created/samples/dresden_samples_sp.csv")
+# krakow_samples_sp <- choose_samples_spatial(stack_krakow, 100)
+# write.csv(krakow_samples_sp, "created/samples/krakow_samples_sp.csv")
+# sevilla_samples_sp <- choose_samples_spatial(stack_sevilla, 100)
+# write.csv(sevilla_samples_sp, "created/samples/sevilla_samples_sp.csv")
 
 
 
@@ -111,10 +167,10 @@ write.csv(sevilla_samples_sp, "created/samples/sevilla_samples_sp.csv")
 # stratified sampling
 ########################################################################################################
 
-write.csv(sampleStratified(stack_dresden$change, size = 500, xy = TRUE), "created/samples/test_stratified.csv")
+# write.csv(sampleStratified(stack_dresden$change, size = 500, xy = TRUE), "created/samples/test_stratified.csv")
 
 # systematic sampling
-# choose every n-th record
+# choose every n-th record 
 sampleSystematic <- function(stack, window_size) {
   
   df <- as.data.frame(stack, optional = T, xy = T)
@@ -127,7 +183,7 @@ sampleSystematic <- function(stack, window_size) {
   column_iterations <- c(1:round(ncol(stack)/window_size))
   
   for (i in row_iterations) {
-    # dont start every row with the first, third or similar pixel, but with random 
+    # start every row with n-th sample
     s <- sample(1:window_size, 1)
     for (j in column_iterations){
       # choose cell number
@@ -150,8 +206,39 @@ sampleSystematic <- function(stack, window_size) {
   return(samples)
 }
 
-dresden_syst <- sampleSystematic(stack_dresden, 10)
-write.csv(dresden_syst, "created/samples/dresden_syst.csv")
+# dresden_syst <- sampleSystematic(stack_dresden, 10)
+# write.csv(dresden_syst, "created/samples/dresden_syst.csv")
+
+
+
+# just take every nth record
+# choose sample way: rate(choose every n record) or amount(choose amount of samples)
+sampleEasy <- function(stack, way = "rate", size = 25) {
+  df <- as.data.frame(stack, xy = T)
+  df_noNA <- df[which(df$change!="NA"), ]
+  
+  df.change <- df[which(df$change=="1"), ]
+  df.nochange <- df[which(df$change=="0"), ]
+  
+  if(way == "amount") {
+    size <- size/2
+    size <- nrow(df.change)/size
+  }
+  
+  s <- sample(1:size, 1)
+  df.change.new <- df.change[seq(s, nrow(df.change), size), ]
+  df.nochange.new <- df.nochange[seq(s, nrow(df.nochange), nrow(df.nochange)/nrow(df.change.new)), ]
+  
+  df.new <- rbind(df.change.new, df.nochange.new)
+  
+  return(df.new)
+}
+# 
+# write.csv((dresden_samples <- sampleEasy(stack_dresden, way="amount", size = 1000)), "created/samples/dresden_easySamples.csv")
+# write.csv((krakow_samples <- sampleEasy(stack_krakow, way="amount", size = 1000)), "created/samples/krakow_easySamples.csv")
+# write.csv((sevilla_samples <- sampleEasy(stack_sevilla, way="amount", size = 1000)), "created/samples/sevilla_easySamples.csv")
+
+
 
 # create new raster in same size as others
 # create windows depending ob sample_rate
@@ -192,8 +279,8 @@ stratified_sampling <- function(stack, window_size = 5) {
   
 } 
 
-samples <- stratified_sampling(stack_dresden, window_size = 5)
-write.csv(samples, "created/samples/sevilla_strat_test.csv")
+# samples <- stratified_sampling(stack_dresden, window_size = 5)
+# write.csv(samples, "created/samples/sevilla_strat_test.csv")
 
 # cell_vector: vector with numbers, representing cell numbers of a raster
 # window_size: divide raster in n x n windows; n = window_size
@@ -208,32 +295,6 @@ calc_strata_no <- function(cell_vector, window_size, raster_cols){
 
 
 
-# just take every nth record
-# choose sample way: rate(choose every n record) or amount(choose amount of samples)
-sampleEasy <- function(stack, way = "rate", size = 25) {
-  df <- as.data.frame(stack, xy = T)
-  df_noNA <- df[which(df$change!="NA"), ]
-  
-  df.change <- df[which(df$change=="1"), ]
-  df.nochange <- df[which(df$change=="0"), ]
-  
-  if(way == "amount") {
-    size <- size/2
-    size <- nrow(df.change)/size
-  }
-  
-  s <- sample(1:size, 1)
-  df.change.new <- df.change[seq(s, nrow(df.change), size), ]
-  df.nochange.new <- df.nochange[seq(s, nrow(df.nochange), nrow(df.nochange)/nrow(df.change.new)), ]
-  
-  df.new <- rbind(df.change.new, df.nochange.new)
-  
-  return(df.new)
-}
-
-write.csv((dresden_samples <- sampleEasy(stack_dresden, way="amount", size = 1000)), "created/samples/dresden_easySamples.csv")
-write.csv((krakow_samples <- sampleEasy(stack_krakow, way="amount", size = 1000)), "created/samples/krakow_easySamples.csv")
-write.csv((sevilla_samples <- sampleEasy(stack_sevilla, way="amount", size = 1000)), "created/samples/sevilla_easySamples.csv")
 
 ########################################################################################################
 # Moran's I
@@ -245,6 +306,7 @@ calc_moransI <- function(samples) {
   coords <- as.matrix(cbind(samples$x, samples$y))
   
   # identify neighbours
+  # within the minimum distance so every sample has at least one neighbour
   k1 <- knn2nb(knearneigh(coords))
   k1dists <- unlist(nbdists(k1, coords))
   # summary(k1dists)
@@ -262,20 +324,20 @@ calc_moransI <- function(samples) {
 
 
 
-seed <- 22
-set.seed(seed)
-samples_sp <- choose_samples_spatial(stack_sevilla, 25)
-calc_moransI(samples_sp)
-set.seed(seed)
-samples <- choose_samples(stack_sevilla, 25)
-calc_moransI(samples)
-
-
-# without sampling
-df <- as.data.frame(stack_krakow, optional = T, xy = T)
-df_noNA <- df[which(df$change!="NA"), ]
-
-calc_moransI(df_noNA)
+# seed <- 22
+# set.seed(seed)
+# samples_sp <- choose_samples_spatial(stack_sevilla, 25)
+# calc_moransI(samples_sp)
+# set.seed(seed)
+# samples <- choose_samples(stack_sevilla, 25)
+# calc_moransI(samples)
+# 
+# 
+# # without sampling
+# df <- as.data.frame(stack_krakow, optional = T, xy = T)
+# df_noNA <- df[which(df$change!="NA"), ]
+# 
+# calc_moransI(df_noNA)
 
 # ######################################################################################################
 # # test stuff
