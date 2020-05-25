@@ -1,67 +1,101 @@
 rm(list=ls())
-setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/")
 
+# library(Deducer)
+library(pROC)
+
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
 # load data
-data.k <- read.csv("krakow_samples.csv")
-data.d <- read.csv("dresden_samples.csv")
-data.s <- read.csv("sevilla_samples.csv")
+# data.k <- read.csv("krakow_samples.csv")
+# data.d <- read.csv("dresden_samples.csv")
+# data.s <- read.csv("sevilla_samples.csv")
+# 
+# data.k.a <- read.csv("krakow_all.csv")
+# data.d.a <- read.csv("dresden_all.csv")
+# data.s.a <- read.csv("sevilla_all.csv")
 
-data.k.a <- read.csv("krakow_all.csv")
-data.d.a <- read.csv("dresden_all.csv")
-data.s.a <- read.csv("sevilla_all.csv")
-
-data.d.sys <- read.csv("dresden_syst.csv")
-
-str(data)
-data[1:5,]
-summary(data)
-
-attach(data)
-search()
-
-##############################################################
-# cross classification
-##############################################################
-(ct <- table(change, landuse))
-summary(ct)
-(cs <- chisq.test(ct))
-# expected change if random assignment
-round(cs$expected)
-ct - round(cs$expected)
-
-# normalize to 1
-(ct.p <- round(t(t(ct)/apply(ct,2,sum)),2))
-
-# bar plot
-# par(mfrow=c(2,2))
-col.vec <- c("gray10", "gray60")
-barplot(ct.p, col=col.vec, main="Proportion change",
-        xlab="landuse")
-
-
-
+data.k <- read.csv("krakow.csv")
+data.d <- read.csv("dresden.csv")
+data.s <- read.csv("sevilla.csv")
 ##############################################################
 # logistic regression
 ##############################################################
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################
+##############################################################
+# tests
+##############################################################
+##############################################################
+
+
+
 glm.t.k <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
-               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.k)
+               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, 
+               family = "binomial",
+               data = data.k)
 glm.t.d <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.d)
+               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+               family = "binomial",
+               data = data.d)
 glm.t.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.s)
+               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+               family = "binomial",
+               data = data.s)
 summary(glm.t.k)
 summary(glm.t.d)
 summary(glm.t.s)
 
+
+
+# significant factors
+glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope +
+                 river_dist + airport_dist + center_dist, 
+                 family = "binomial",
+                 data = data.k)
+summary(glm.t.k.s)
+calc_roc(glm.t.k.s)
+
+
+glm.t.d.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
+                 pRoads_dist+ center_dist,
+                 family = "binomial",
+                 data = data.d)
+summary(glm.t.d.s)
+calc_roc(glm.t.d.s)
+
+
+glm.t.s.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens +
+                 mRoads_dist + pRoads_dist + train_dist + center_dist,
+                 family = "binomial",
+                 data = data.s)
+summary(glm.t.s.s)
+calc_roc(glm.t.s.s)
+
+
+
+
 # without sampling
 glm.t.k.a <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.k.a)
+                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.k.a)
 glm.t.d.a <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.d.a)
+                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.d.a)
 glm.t.s.a <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.s.a)
+                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.s.a)
 summary(glm.t.k.a)
 summary(glm.t.d.a)
 summary(glm.t.s.a)
@@ -72,17 +106,25 @@ glm.t.dsys <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
 summary(glm.t.dsys)
 glm.t.dsys.s <- glm(formula = change ~ factor(landuse) +  pop_dens + pRoads_dist, data = data.d.sys)
 summary(glm.t.dsys.s)
+############################################################################################################################
+###################### ROC functions #######################################################################################
+############################################################################################################################
 
-# significant factors
-glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
-                 center_dist, data = data.k)
-summary(glm.t.k.s)
-glm.t.d.s <- glm(formula = change ~ factor(landuse) +  pop_dens + mRoads_dist + pRoads_dist, data = data.d)
-summary(glm.t.d.s)
-glm.t.s.s <- glm(formula = change ~ pop_dens + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, data = data.s)
-summary(glm.t.s.s)
+# see: https://stackoverflow.com/questions/18449013/r-logistic-regression-area-under-curve
+calc_roc <- function(model) {
+  prob = predict(model, type = c("response"))
+  model$data$prob = prob
+  g <- roc(model$data$change ~ prob, data = model$data)
+  
+  plot.roc(g, print.auc = TRUE, print.auc.x = 0.3, print.auc.y = 0)
+  
+  return(g$auc)
+}
 
 
+
+############################################################################################################################
+# from report
 
 
 logit.roc <- function(model, steps=20) {
@@ -126,6 +168,45 @@ logit.roc.plot <- function(r, title="ROC curve") {
   title(main = title)
 }
 
-r <- logit.roc(glm.t.dsys.s, steps=100)
+r <- logit.roc(glm.t.k.s, steps=100)
 logit.roc.area(r)
 logit.roc.plot(r, "ROC for tenure, roads, settlements")
+
+
+
+
+
+############################################################################################################################
+############################################################################################################################
+############################################################################################################################
+
+
+str(data)
+data[1:5,]
+summary(data)
+
+attach(data)
+search()
+
+##############################################################
+# cross classification
+##############################################################
+(ct <- table(change, landuse))
+summary(ct)
+(cs <- chisq.test(ct))
+# expected change if random assignment
+round(cs$expected)
+ct - round(cs$expected)
+
+# normalize to 1
+(ct.p <- round(t(t(ct)/apply(ct,2,sum)),2))
+
+# bar plot
+# par(mfrow=c(2,2))
+col.vec <- c("gray10", "gray60")
+barplot(ct.p, col=col.vec, main="Proportion change",
+        xlab="landuse")
+
+
+
+
