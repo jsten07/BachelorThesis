@@ -165,7 +165,7 @@ calc_dist_raster <- function(osm, boundaries, resolution, epsg) {
 }
 
 
-calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
+calc_builtup_density <- function(ghsl_30m, boundary, epsg, window_size) {
   
   # # crop on boundary extent with 500 m buffer
   # boundaries_reproj <- spTransform(boundary, crs(ghsl_30m))
@@ -187,13 +187,13 @@ calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
   ghsl_changed <- reclassify(ghsl_reprojected, rcl.m, include.lowest = T)
   
   # count cells within 7 x 7 window
-  builtupCells <- focal(ghsl_changed, w=matrix(1, nc=7, nr=7))
+  builtupCells <- focal(ghsl_changed, w=matrix(1, nc=window_size, nr=window_size))
   
   # # crop and mask
   # raster_crop <- crop(builtupCells,reprojectedBoundaries)
   # built_density_city <- mask(raster_crop,reprojectedBoundaries)
   
-  builtupDensity <- builtupCells/48*100
+  builtupDensity <- (builtupCells/(window_size*window_size-1))*100
   
   plot(builtupDensity)
 
@@ -201,11 +201,11 @@ calc_builtup_density <- function(ghsl_30m, boundary, epsg) {
 }
 
 
-create_stack <- function(ghsl_30m, epsg, boundary, ghsl_pop, slope, landuse, road, primary_road, river, train_stations, city_center, airport) {
+create_stack <- function(ghsl_30m, epsg, boundary, ghsl_pop, builtupDens_windowSizw, slope, landuse, road, primary_road, river, train_stations, city_center, airport) {
   
   change <- getChangeFromMultitemp(ghsl_30m, boundary, epsg, 30)
   
-  builtup_density <- calc_builtup_density(ghsl_30m, boundary, epsg)
+  builtup_density <- calc_builtup_density(ghsl_30m, boundary, epsg, builtupDens_windowSizw)
   pop_density <- reprojectAndCrop(ghsl_pop, boundary, epsg, 250)
   slope <- citySlopeAsPercentage(slope, boundary, epsg)
   landuse <- cropAndReclassify_landuse(landuse, boundary, epsg, 100)
