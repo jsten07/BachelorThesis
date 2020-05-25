@@ -16,7 +16,11 @@ GHSL_ESP_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_
 GHSL_POL_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
 GHSL_POL_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
 GHSL_ESP_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8_ESP/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8.tif")
-GHSL_POL_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7.tif")
+GHSL_GER_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7.tif")
+GHSL_POL_30m_2 <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_15_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_15_7.tif")
+GHSL_POL_ext <- c(2200000,2260000,6430000,6480000)
+GHSL_POL_30m <- mosaic(crop(GHSL_GER_30m, GHSL_POL_ext), crop(GHSL_POL_30m_2, GHSL_POL_ext), fun = mean)
+
 
 GHSL_pop_ESP <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4_ESP/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4.tif")
 GHSL_pop_POL <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3_POL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3.tif")
@@ -52,21 +56,21 @@ landuse <- raster("original/land cover/clc2006_clc2000_v2018_20_raster100m/CLC20
 ########################################################################################
 # create stack and save grid and csv
 
-stack_sevilla <- create_stack(GHSL_ESP_30m, 32630, sevilla_boundaries, GHSL_pop_ESP, slope_ESP, landuse, 
+stack_sevilla <- create_stack(GHSL_ESP_30m, 32630, sevilla_boundaries, GHSL_pop_ESP, 5, slope_ESP, landuse, 
                               sevilla_roads, sevilla_primary_roads, sevilla_river, sevilla_tStations, sevilla_center, sevilla_airport)
 stack_sevilla.df <- as.data.frame(getValues(stack_sevilla))
 stack_sevilla.df_noNA <- stack_sevilla.df[which(stack_sevilla.df$change!="NA"), ]
 write.csv(stack_sevilla.df_noNA, "created/stack/sevilla.csv")
 writeRaster(stack_sevilla, "created/stack/sevilla.grd", overwrite = TRUE)
 
-stack_dresden <- create_stack(GHSL_POL_30m, 32633, dresden_boundaries, GHSL_pop_POL, slope_GER, landuse, 
+stack_dresden <- create_stack(GHSL_GER_30m, 32633, dresden_boundaries, GHSL_pop_POL, 5, slope_GER, landuse, 
                               dresden_roads, dresden_primary_roads, dresden_river, dresden_tStations, dresden_center, dresden_airport)
 stack_dresden.df <- as.data.frame(getValues(stack_dresden))
 stack_dresden.df_noNA <- stack_dresden.df[which(stack_dresden.df$change!="NA"), ]
 write.csv(stack_dresden.df_noNA, "created/stack/dresden.csv")
 writeRaster(stack_dresden, "created/stack/dresden.grd", overwrite = TRUE)
 
-stack_krakow <- create_stack(GHSL_POL_30m, 32634, krakow_boundaries, GHSL_pop_POL, slope_POL, landuse, 
+stack_krakow <- create_stack(GHSL_POL_30m, 32634, krakow_boundaries, GHSL_pop_POL, 5, slope_POL, landuse, 
                               krakow_roads, krakow_primary_roads, krakow_river, krakow_tStations, krakow_center, krakow_airport)
 stack_krakow.df <- as.data.frame(getValues(stack_krakow))
 stack_krakow.df_noNA <- stack_krakow.df[which(stack_krakow.df$change!="NA"), ]
@@ -93,7 +97,7 @@ change_Sevilla_30m <- getChangeFromMultitemp(GHSL_ESP_30m, sevilla_boundaries, 3
 writeRaster(change_Sevilla_30m, "created/GHSL_R/sevilla_change_30_m.tif", overwrite=T)
 change_Krakow_30m <- getChangeFromMultitemp(GHSL_POL_30m, krakow_boundaries, 32634, resolution = 30)
 writeRaster(change_Krakow_30m, "created/GHSL_R/krakow_change_30_m.tif", overwrite=T)
-change_Dresden_30m <- getChangeFromMultitemp(GHSL_POL_30m, dresden_boundaries, 32633, resolution = 30)
+change_Dresden_30m <- getChangeFromMultitemp(GHSL_GER_30m, dresden_boundaries, 32633, resolution = 30)
 writeRaster(change_Dresden_30m, "created/GHSL_R/dresden_change_30_m.tif", overwrite=T)
 
 # population density
@@ -125,7 +129,7 @@ writeRaster(landuse_Krakow, "created/landuse/krakow_landuse.tif", overwrite=T)
 
 # builtup density
 
-built_density_Dresden <- calc_builtup_density(GHSL_POL_30m, dresden_boundaries, 32633)
+built_density_Dresden <- calc_builtup_density(GHSL_GER_30m, dresden_boundaries, 32633)
 writeRaster(built_density_Dresden, "created/builtup_density/dresden_density.tif", overwrite=T)
 built_density_Krakow <- calc_builtup_density(GHSL_POL_30m, krakow_boundaries, 32634)
 writeRaster(built_density_Krakow, "created/builtup_density/krakow_density.tif", overwrite=T)
