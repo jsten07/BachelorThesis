@@ -2,21 +2,27 @@ rm(list=ls())
 
 # library(Deducer)
 library(pROC)
+library(caret)
 
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
 # load data
-# data.k <- read.csv("krakow_samples.csv")
-# data.d <- read.csv("dresden_samples.csv")
-# data.s <- read.csv("sevilla_samples.csv")
+data.k <- read.csv("krakow_new.csv")
+trainIds <- createDataPartition(data.k$X, p = 0.5, list = FALSE)
+data.k.train <- data.k[trainIds,]
+data.k.test <- data.k[-trainIds,]
+data.d <- read.csv("dresden_new.csv")
+data.s <- read.csv("sevilla_new.csv")
 # 
 # data.k.a <- read.csv("krakow_all.csv")
 # data.d.a <- read.csv("dresden_all.csv")
 # data.s.a <- read.csv("sevilla_all.csv")
 
-data.k <- read.csv("krakow.csv")
-data.d <- read.csv("dresden.csv")
-data.s <- read.csv("sevilla.csv")
+# data.k <- read.csv("krakow.csv")
+# data.d <- read.csv("dresden.csv")
+# data.s <- read.csv("sevilla.csv")
+
+# data.k.test <- read.csv("krakow_test.csv")
 ##############################################################
 # logistic regression
 ##############################################################
@@ -47,7 +53,7 @@ data.s <- read.csv("sevilla.csv")
 glm.t.k <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, 
                family = "binomial",
-               data = data.k)
+               data = data.k.train)
 glm.t.d <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                family = "binomial",
@@ -61,14 +67,15 @@ summary(glm.t.d)
 summary(glm.t.s)
 
 
-
-# significant factors
+##############################################################
+# significant factors stratified samples
 glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope +
                  river_dist + airport_dist + center_dist, 
                  family = "binomial",
                  data = data.k)
 summary(glm.t.k.s)
 calc_roc(glm.t.k.s)
+calc_roc(glm.t.k.s, test_data = data.k.test)
 
 
 glm.t.d.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
@@ -81,6 +88,33 @@ calc_roc(glm.t.d.s)
 
 glm.t.s.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens +
                  mRoads_dist + pRoads_dist + train_dist + center_dist,
+                 family = "binomial",
+                 data = data.s)
+summary(glm.t.s.s)
+calc_roc(glm.t.s.s)
+
+
+##############################################################
+# significant factors stratified samples new (one sample per strata and class)
+glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens +  
+                   center_dist, 
+                 family = "binomial",
+                 data = data.k)
+summary(glm.t.k.s)
+calc_roc(glm.t.k.s, test_data = data.k.test)
+# calc_roc(glm.t.k.s, test_data = data.k.test)
+
+
+glm.t.d.s <- glm(formula = change ~ factor(landuse) +  built_dens + 
+                 pRoads_dist + center_dist,
+                 family = "binomial",
+                 data = data.d)
+summary(glm.t.d.s)
+calc_roc(glm.t.d.s)
+
+
+glm.t.s.s <- glm(formula = change ~ factor(landuse) +  built_dens +
+                   mRoads_dist,
                  family = "binomial",
                  data = data.s)
 summary(glm.t.s.s)
@@ -106,15 +140,27 @@ glm.t.dsys <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
 summary(glm.t.dsys)
 glm.t.dsys.s <- glm(formula = change ~ factor(landuse) +  pop_dens + pRoads_dist, data = data.d.sys)
 summary(glm.t.dsys.s)
+
+
+
+
 ############################################################################################################################
 ###################### ROC functions #######################################################################################
 ############################################################################################################################
 
 # see: https://stackoverflow.com/questions/18449013/r-logistic-regression-area-under-curve
-calc_roc <- function(model) {
-  prob = predict(model, type = c("response"))
-  model$data$prob = prob
-  g <- roc(model$data$change ~ prob, data = model$data)
+calc_roc <- function(model, test_data = NULL) {
+  if(is.null(test_data)){
+    prob = predict(model, type = c("response"))
+    model$data$prob = prob
+    g <- roc(model$data$change ~ prob, data = model$data)
+    print("model data")
+  } else {
+    prob = predict(model, newdata = test_data, type = c("response"))
+    # test_data$prob = prob
+    g <- roc(test_data$change ~ prob, data = test_data)
+    print("test data")
+  }
   
   plot.roc(g, print.auc = TRUE, print.auc.x = 0.3, print.auc.y = 0)
   
@@ -177,7 +223,7 @@ logit.roc.plot(r, "ROC for tenure, roads, settlements")
 
 
 ############################################################################################################################
-############################################################################################################################
+####### descriptive analysis ###############################################################################################
 ############################################################################################################################
 
 
