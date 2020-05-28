@@ -55,6 +55,21 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 7)), ("created/sa
 
 
 
+###################################################################################################################
+# stratified 
+# with changed and not changed value for every strata
+# 950 - 994 samples
+# MOrans I: 0.01 - -0.17
+###################################################################################################################
+
+set.seed(13)
+write.csv((samples_dresden <- stratified_sampling(stack_dresden, 24)), ("created/samples/stratified/dresden_new.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 16)), ("created/samples/stratified/sevilla_new.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 28)), ("created/samples/stratified/krakow_new.csv"))
+
+
+
+
 str(samples_dresden)
 str(samples_sevilla)
 str(samples_krakow)
@@ -62,14 +77,6 @@ str(samples_krakow)
 calc_moransI(samples_dresden)
 calc_moransI(samples_sevilla)
 calc_moransI(samples_krakow)
-
-
-
-
-
-
-
-
 
 
 
@@ -187,7 +194,7 @@ sampleSystematic <- function(stack, window_size) {
     s <- sample(1:window_size, 1)
     for (j in column_iterations){
       # choose cell number
-      cell <- i * (window_size - 2) * ncol(stack) + j * window_size + s
+      cell <- i * (window_size) * ncol(stack) + j * window_size + s
       samples[nrow(samples)+1,] <- df[cell,]
     }
   }
@@ -206,8 +213,10 @@ sampleSystematic <- function(stack, window_size) {
   return(samples)
 }
 
-# dresden_syst <- sampleSystematic(stack_dresden, 10)
-# write.csv(dresden_syst, "created/samples/dresden_syst.csv")
+# sevilla_syst <- sampleSystematic(stack_sevilla, 7)
+# write.csv(sevilla_syst, "created/samples/sevilla_syst.csv")
+# 
+# calc_moransI(sevilla_syst)
 
 
 
@@ -236,14 +245,15 @@ sampleEasy <- function(stack, way = "rate", size = 25) {
 # 
 # write.csv((dresden_samples <- sampleEasy(stack_dresden, way="amount", size = 1000)), "created/samples/dresden_easySamples.csv")
 # write.csv((krakow_samples <- sampleEasy(stack_krakow, way="amount", size = 1000)), "created/samples/krakow_easySamples.csv")
-# write.csv((sevilla_samples <- sampleEasy(stack_sevilla, way="amount", size = 1000)), "created/samples/sevilla_easySamples.csv")
+# write.csv((sevilla_samples <- sampleEasy(stack_sevilla, way="amount", size = 500)), "created/samples/sevilla_easySamples.csv")
+# calc_moransI(sevilla_samples)
 
 
 
-# create new raster in same size as others
-# create windows depending ob sample_rate
-# sampleStratified on window value
-# connect sampled cell number to data 
+##############################################################################
+# create strata as square windows
+# choose one record in every strata
+# remove NAs and bring changed and not changed to same amount
 
 stratified_sampling <- function(stack, window_size = 5) {
   # width of raster (amount of columns)
@@ -259,14 +269,15 @@ stratified_sampling <- function(stack, window_size = 5) {
   # sample dataframe stratified
   df.strat <- stratified(df, c("strata"), size = 1, keep.rownames = TRUE)
   
+  
   # remove NA values
   samples <- df.strat[which(df.strat$change!="NA"), ]
   sampleschange <- samples[which(samples$change=="1"), ]
   samplesNochange <- samples[which(samples$change=="0"), ]
   samplesNochange <- samplesNochange[sample(nrow(samplesNochange), nrow(sampleschange)),]
-  
+
   samples <- rbind(sampleschange, samplesNochange)
-  
+
   # !!! general problem: samples in strata with few records overrepresented
   
   ######################################################
@@ -274,6 +285,34 @@ stratified_sampling <- function(stack, window_size = 5) {
   ######################################################
   # possibility to use stratified() method in fifer package
   ######################################################
+  
+  return(samples)
+  
+} 
+
+
+##################################################################################
+# create square strata in window_size
+# choose one changed and one not changed record from every strata (if available)
+# randomly choose not changed samples to get same amount as of changed
+
+strata_sampling <- function(stack, window_size = 5) {
+  # width of raster (amount of columns)
+  raster_cols <- ncol(stack)
+  
+  df <- as.data.frame(stack, xy = T)
+  cell_no <- as.integer(row.names(df))
+  
+  # calc strata numbers 
+  strata <- calc_strata_no(cell_no, window_size, raster_cols)
+  df["strata"] <- strata     # and add to data frame
+  
+  # sample dataframe stratified
+  df.strat.1 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "1"), keep.rownames = TRUE)
+  df.strat.0 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "0"), keep.rownames = TRUE)
+  df.strat.0 <- df.strat.0[sample(nrow(df.strat.0), nrow(df.strat.1)),]
+  
+  samples <- rbind(df.strat.1, df.strat.0)
   
   return(samples)
   
