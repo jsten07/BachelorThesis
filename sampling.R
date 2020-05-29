@@ -24,7 +24,9 @@ stack_sevilla <- stack("created/stack/sevilla.grd")
 ###################################################################################################################
 # 820 - 878 samples
 # Morans I: 0.25 - 0.29
+# AUC: 0.86 - 0.89
 ###################################################################################################################
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
 write.csv((samples_dresden <- stratified_sampling(stack_dresden, 5)), ("created/samples/stratified/dresden.csv"))
 write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 6)), ("created/samples/stratified/sevilla.csv"))
@@ -36,7 +38,9 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 9)), ("created/sa
 ###################################################################################################################
 # 860 - 2728 samples
 # Morans I: 0.28.- 0.37
+# ROC: 0.84-0.87
 ###################################################################################################################
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
 write.csv((samples_dresden <- stratified_sampling(stack_dresden, 5)), ("created/samples/stratified/dresden.csv"))
 write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 5)), ("created/samples/stratified/sevilla.csv"))
@@ -48,6 +52,7 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 5)), ("created/sa
 # 494 - 1332 samples
 # Morans I: 0.26- 0.40
 ###################################################################################################################
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
 write.csv((samples_dresden <- stratified_sampling(stack_dresden, 7)), ("created/samples/stratified/dresden.csv"))
 write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 7)), ("created/samples/stratified/sevilla.csv"))
@@ -58,15 +63,29 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 7)), ("created/sa
 ###################################################################################################################
 # stratified 
 # with changed and not changed value for every strata
-# 950 - 994 samples
-# MOrans I: 0.01 - -0.17
+# 950 - 994 samples (window size: 24, 16, ?)
+# MOrans I: 0.04 - -0.17
+# AUC: 0.67 - 0.76
 ###################################################################################################################
-
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
-write.csv((samples_dresden <- stratified_sampling(stack_dresden, 24)), ("created/samples/stratified/dresden_new.csv"))
-write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 16)), ("created/samples/stratified/sevilla_new.csv"))
-write.csv((samples_krakow <- stratified_sampling(stack_krakow, 28)), ("created/samples/stratified/krakow_new.csv"))
+write.csv((samples_dresden <- strata_sampling(stack_dresden, 24)), ("created/samples/stratified/dresden_new.csv"))
+write.csv((samples_sevilla <- strata_sampling(stack_sevilla, 16)), ("created/samples/stratified/sevilla_new.csv"))
+write.csv((samples_krakow <- strata_sampling(stack_krakow, 28)), ("created/samples/stratified/krakow_new.csv"))
 
+
+###################################################################################################################
+# stratified 
+# with changed and not changed value for every strata
+# 2370 - 2540 samples (window size: 13, 9, 16)
+# MOrans I: 0.11 - -0.06
+# 0.65 - 0.72
+###################################################################################################################
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
+set.seed(13)
+write.csv((samples_dresden <- strata_sampling(stack_dresden, 13)), ("created/samples/stratified/dresden_new.csv"))
+write.csv((samples_sevilla <- strata_sampling(stack_sevilla, 9)), ("created/samples/stratified/sevilla_new.csv"))
+write.csv((samples_krakow <- strata_sampling(stack_krakow, 16)), ("created/samples/stratified/krakow_new.csv"))
 
 
 
@@ -77,6 +96,8 @@ str(samples_krakow)
 calc_moransI(samples_dresden)
 calc_moransI(samples_sevilla)
 calc_moransI(samples_krakow)
+
+sum(samples_krakow)
 
 
 
