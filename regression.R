@@ -3,32 +3,45 @@ rm(list=ls())
 # library(Deducer)
 library(pROC)
 library(caret)
+library(varhandle)
 
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
 # load data
 data.k <- read.csv("krakow_new.csv")
-trainIds <- createDataPartition(data.k$X, p = 0.5, list = FALSE)
+trainIds <- createDataPartition(data.k$X, p = 0.3, list = FALSE)
 data.k.train <- data.k[trainIds,]
 data.k.test <- data.k[-trainIds,]
+
 data.d <- read.csv("dresden_new.csv")
+trainIds <- createDataPartition(data.d$X, p = 0.3, list = FALSE)
+data.d.train <- data.d[trainIds,]
+data.d.test <- data.d[-trainIds,]
+
 data.s <- read.csv("sevilla_new.csv")
+trainIds <- createDataPartition(data.d$X, p = 0.3, list = FALSE)
+data.s.train <- data.s[trainIds,]
+data.s.test <- data.s[-trainIds,]
 # 
 # data.k.a <- read.csv("krakow_all.csv")
 # data.d.a <- read.csv("dresden_all.csv")
 # data.s.a <- read.csv("sevilla_all.csv")
 
-# data.k <- read.csv("krakow.csv")
-# data.d <- read.csv("dresden.csv")
-# data.s <- read.csv("sevilla.csv")
+data.k <- read.csv("krakow.csv")
+trainIds <- createDataPartition(data.k$X, p = 0.7, list = FALSE)
+data.k.train <- data.k[trainIds,]
+data.k.test <- data.k[-trainIds,]
+calc_moransI(data.k.train)
+data.d <- read.csv("dresden.csv")
+data.s <- read.csv("sevilla.csv")
 
 # data.k.test <- read.csv("krakow_test.csv")
 ##############################################################
 # logistic regression
 ##############################################################
 
-
-
+calc_moransI(data.k)
+calc_moransI(data.k.test)
 
 
 
@@ -50,15 +63,15 @@ data.s <- read.csv("sevilla_new.csv")
 
 
 
-glm.t.k <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
+glm.t.k <- glm(formula = change ~ factor(landuse) + x + y +  built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, 
                family = "binomial",
-               data = data.k.train)
-glm.t.d <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
+               data = data.k)
+glm.t.d <- glm(formula = change ~ factor(landuse) + x+y+ built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                family = "binomial",
                data = data.d)
-glm.t.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope + 
+glm.t.s <- glm(formula = change ~ factor(landuse) + x+y+  built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                family = "binomial",
                data = data.s)
@@ -66,28 +79,31 @@ summary(glm.t.k)
 summary(glm.t.d)
 summary(glm.t.s)
 
+calc_roc(glm.t.k)
+calc_roc(glm.t.d)
+calc_roc(glm.t.s)
+
 
 ##############################################################
 # significant factors stratified samples
-glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope +
-                 river_dist + airport_dist + center_dist, 
+glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens, 
                  family = "binomial",
-                 data = data.k)
+                 data = data.k.test)
 summary(glm.t.k.s)
 calc_roc(glm.t.k.s)
-calc_roc(glm.t.k.s, test_data = data.k.test)
+calc_roc(glm.t.k.s, test_data = data.k.train)
 
 
 glm.t.d.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
-                 pRoads_dist+ center_dist,
+                 mRoads_dist + pRoads_dist+ center_dist,
                  family = "binomial",
                  data = data.d)
 summary(glm.t.d.s)
 calc_roc(glm.t.d.s)
 
 
-glm.t.s.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens +
-                 mRoads_dist + pRoads_dist + train_dist + center_dist,
+glm.t.s.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + slope +
+                 mRoads_dist + pRoads_dist,
                  family = "binomial",
                  data = data.s)
 summary(glm.t.s.s)
@@ -96,12 +112,13 @@ calc_roc(glm.t.s.s)
 
 ##############################################################
 # significant factors stratified samples new (one sample per strata and class)
+data.k.dummy <- cbind(data.k, to.dummy(data.k$landuse, prefix = "landuse"))
 glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens +  
-                   center_dist, 
+                   mRoads_dist + train_dist, 
                  family = "binomial",
                  data = data.k)
 summary(glm.t.k.s)
-calc_roc(glm.t.k.s, test_data = data.k.test)
+calc_roc(glm.t.k, test_data = data.k)
 # calc_roc(glm.t.k.s, test_data = data.k.test)
 
 
@@ -114,7 +131,7 @@ calc_roc(glm.t.d.s)
 
 
 glm.t.s.s <- glm(formula = change ~ factor(landuse) +  built_dens +
-                   mRoads_dist,
+                   mRoads_dist + pRoads_dist,
                  family = "binomial",
                  data = data.s)
 summary(glm.t.s.s)
@@ -166,6 +183,45 @@ calc_roc <- function(model, test_data = NULL) {
   
   return(g$auc)
 }
+
+
+
+############################################################################################################################
+# interaction between independent variables
+############################################################################################################################
+
+attach(data.k, name = "samples")
+detach(samples)
+
+##############
+# pairwise correlations among the predictors 
+cor(data.s[5:15])
+(correlation.k <- (abs(cor(data.k[5:15])) > 0.7))
+(correlation.d <- (abs(cor(data.d[5:15])) > 0.7))
+(correlation.s <- (abs(cor(data.s[5:15])) > 0.7))
+
+# continuous to categorical
+summary(lm(mRoads_dist ~ factor(landuse)))
+plot(mRoads_dist ~ factor(landuse))
+
+# continuous to continuous
+plot(data.k$pop_dens, data.k$built_dens)
+abline(lm(pop_dens ~ built_dens, data = data.k))
+plot(data.k$center_dist, data.k$airport_dist)
+abline(lm(center_dist ~ airport_dist, data = data.k))
+plot(data.d$pop_dens, data.d$built_dens)
+plot(data.s$pop_dens, data.s$built_dens)
+plot(data.s$center_dist, data.s$pRoads_dist)
+plot(data.s$train_dist, data.s$pRoads_dist)
+plot(data.s$center_dist, data.s$river_dist)
+abline(lm(river_dist ~ center_dist, data = data.s))
+plot(data.s$airport_dist, data.s$river_dist)
+plot(data.s$center_dist, data.s$train_dist)
+
+abline(h=mean(pRoads_dist),lty=2); abline(v=mean(built_dens),lty=2)
+cor.test(pRoads_dist, built_dens)
+
+
 
 
 
