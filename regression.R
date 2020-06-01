@@ -9,17 +9,17 @@ setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
 # load data
 data.k <- read.csv("krakow_new.csv")
-trainIds <- createDataPartition(data.k$X, p = 0.3, list = FALSE)
+trainIds <- createDataPartition(data.k$X, p = 0.5, list = FALSE)
 data.k.train <- data.k[trainIds,]
 data.k.test <- data.k[-trainIds,]
 
 data.d <- read.csv("dresden_new.csv")
-trainIds <- createDataPartition(data.d$X, p = 0.3, list = FALSE)
+trainIds <- createDataPartition(data.d$X, p = 0.5, list = FALSE)
 data.d.train <- data.d[trainIds,]
 data.d.test <- data.d[-trainIds,]
 
 data.s <- read.csv("sevilla_new.csv")
-trainIds <- createDataPartition(data.d$X, p = 0.3, list = FALSE)
+trainIds <- createDataPartition(data.d$X, p = 0.5, list = FALSE)
 data.s.train <- data.s[trainIds,]
 data.s.test <- data.s[-trainIds,]
 # 
@@ -63,10 +63,10 @@ calc_moransI(data.k.test)
 
 
 
-glm.t.k <- glm(formula = change ~ factor(landuse) + x + y +  built_dens + pop_dens + slope + 
+glm.t.k <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, 
                family = "binomial",
-               data = data.k)
+               data = data.k.train)
 glm.t.d <- glm(formula = change ~ factor(landuse) + x+y+ built_dens + pop_dens + slope + 
                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                family = "binomial",
@@ -84,14 +84,61 @@ calc_roc(glm.t.d)
 calc_roc(glm.t.s)
 
 
+
+create_model <- function(data, significance = 0.05, split = T, train_part = 0.5) {
+  
+  # split landuse in single binary variables
+  # data.k.dummy <- cbind(data.k, to.dummy(data.k$landuse, prefix = "landuse"))
+  
+  # split data in train and test part
+  if(split == T)   {
+    trainIds <- createDataPartition(data$X, p = train_part, list = FALSE)
+    data.train <- data[trainIds,]
+    data.test <- data[-trainIds,]
+  } else {
+    data.train <- data
+    data.test <- data
+  }
+  
+  
+  # create model with all variables
+  model <- glm(formula = change ~ factor(landuse) + x+y+ built_dens + pop_dens + slope + 
+                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+               family = "binomial",
+               data = data.train)
+  
+  # 
+  formula <- "change ~ factor(landuse) "
+  
+  # find signifcant variables and add them to the formula for the new model
+  for (i in c(6:length(summary(model)$coefficients[,4]))) {
+    if(summary(model)$coefficients[i,4] < significance) {
+      formula <- paste(formula, "+", rownames(summary(model)$coefficients)[i])
+    }
+  }
+  
+  # model with significant variables
+  model.s <- glm(formula = formula,
+                 family = "binomial",
+                 data = data.train)
+  
+  # calculate roc of new model
+  model.s.roc <- calc_roc(model.s, test_data = data.test)
+  print(model.s.roc)
+  
+  return(model.s)
+}
+
+
+
 ##############################################################
 # significant factors stratified samples
-glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens, 
+glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + mRoads_dist, # + pop_dens, 
                  family = "binomial",
-                 data = data.k.test)
+                 data = data.k.train)
 summary(glm.t.k.s)
 calc_roc(glm.t.k.s)
-calc_roc(glm.t.k.s, test_data = data.k.train)
+calc_roc(glm.t.k.s, test_data = data.k.test)
 
 
 glm.t.d.s <- glm(formula = change ~ factor(landuse) +  built_dens + pop_dens + 
@@ -195,7 +242,9 @@ detach(samples)
 
 ##############
 # pairwise correlations among the predictors 
-cor(data.s[5:15])
+cor(data.k.a[4:14])
+cor(data.d.a[4:14])
+cor(data.s.a[4:14])
 (correlation.k <- (abs(cor(data.k[5:15])) > 0.7))
 (correlation.d <- (abs(cor(data.d[5:15])) > 0.7))
 (correlation.s <- (abs(cor(data.s[5:15])) > 0.7))
