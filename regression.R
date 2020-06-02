@@ -8,30 +8,30 @@ library(varhandle)
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
 # load data
-data.k <- read.csv("krakow_new.csv")
-trainIds <- createDataPartition(data.k$X, p = 0.5, list = FALSE)
-data.k.train <- data.k[trainIds,]
-data.k.test <- data.k[-trainIds,]
+data.k.n <- read.csv("krakow_new.csv")
+trainIds <- createDataPartition(data.k.n$X, p = 0.5, list = FALSE)
+data.k.train <- data.k.n[trainIds,]
+data.k.test <- data.k.n[-trainIds,]
 
-data.d <- read.csv("dresden_new.csv")
-trainIds <- createDataPartition(data.d$X, p = 0.5, list = FALSE)
-data.d.train <- data.d[trainIds,]
-data.d.test <- data.d[-trainIds,]
+data.d.n <- read.csv("dresden_new.csv")
+# trainIds <- createDataPartition(data.d$X, p = 0.5, list = FALSE)
+# data.d.train <- data.d[trainIds,]
+# data.d.test <- data.d[-trainIds,]
 
-data.s <- read.csv("sevilla_new.csv")
-trainIds <- createDataPartition(data.d$X, p = 0.5, list = FALSE)
-data.s.train <- data.s[trainIds,]
-data.s.test <- data.s[-trainIds,]
+data.s.n <- read.csv("sevilla_new.csv")
+# trainIds <- createDataPartition(data.d$X, p = 0.5, list = FALSE)
+# data.s.train <- data.s[trainIds,]
+# data.s.test <- data.s[-trainIds,]
 # 
 # data.k.a <- read.csv("krakow_all.csv")
 # data.d.a <- read.csv("dresden_all.csv")
 # data.s.a <- read.csv("sevilla_all.csv")
 
 data.k <- read.csv("krakow.csv")
-trainIds <- createDataPartition(data.k$X, p = 0.7, list = FALSE)
+trainIds <- createDataPartition(data.k$X, p = 0.5, list = FALSE)
 data.k.train <- data.k[trainIds,]
 data.k.test <- data.k[-trainIds,]
-calc_moransI(data.k.train)
+calc_moransI(data.d)
 data.d <- read.csv("dresden.csv")
 data.s <- read.csv("sevilla.csv")
 
@@ -40,50 +40,20 @@ data.s <- read.csv("sevilla.csv")
 # logistic regression
 ##############################################################
 
-calc_moransI(data.k)
-calc_moransI(data.k.test)
+create_model(data.k)
+create_model(data.d)
+create_model(data.s)
+
+create_model(data.k.n)
+create_model(data.d.n)
+create_model(data.s.n)
 
 
 
 
-
-
-
-
-
-
-
-
-
-##############################################################
-##############################################################
-# tests
-##############################################################
-##############################################################
-
-
-
-glm.t.k <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
-               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, 
-               family = "binomial",
-               data = data.k.train)
-glm.t.d <- glm(formula = change ~ factor(landuse) + x+y+ built_dens + pop_dens + slope + 
-               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
-               family = "binomial",
-               data = data.d)
-glm.t.s <- glm(formula = change ~ factor(landuse) + x+y+  built_dens + pop_dens + slope + 
-               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
-               family = "binomial",
-               data = data.s)
-summary(glm.t.k)
-summary(glm.t.d)
-summary(glm.t.s)
-
-calc_roc(glm.t.k)
-calc_roc(glm.t.d)
-calc_roc(glm.t.s)
-
-
+############################################################################################################################
+###################### functions #######################################################################################
+############################################################################################################################
 
 create_model <- function(data, significance = 0.05, split = T, train_part = 0.5) {
   
@@ -102,7 +72,7 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5)
   
   
   # create model with all variables
-  model <- glm(formula = change ~ factor(landuse) + x+y+ built_dens + pop_dens + slope + 
+  model <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
                  mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                family = "binomial",
                data = data.train)
@@ -129,11 +99,94 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5)
   return(model.s)
 }
 
+############################################################################################################################
+###################### ROC functions #######################################################################################
+############################################################################################################################
+
+# see: https://stackoverflow.com/questions/18449013/r-logistic-regression-area-under-curve
+calc_roc <- function(model, test_data = NULL) {
+  if(is.null(test_data)){
+    prob = predict(model, type = c("response"))
+    model$data$prob = prob
+    g <- roc(model$model$.outcome ~ prob, data = model$data)
+    print("model data")
+  } else {
+    prob = predict(model, newdata = test_data, type = c("response"))
+    # test_data$prob = prob
+    g <- roc(test_data$change ~ prob, data = test_data)
+    print("test data")
+  }
+  
+  plot.roc(g, print.auc = TRUE, print.auc.x = 0.3, print.auc.y = 0)
+  
+  return(g$auc)
+}
+
+
+##############################################################
+##############################################################
+# tests
+##############################################################
+##############################################################
+
+
+#############################################################
+# forward feature selection
+library(CAST)
+
+predictors <- c("change", "built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist", "cv_strata")
+
+# train model
+data.dummy <- cbind(data.k.n[,predictors], to.dummy(data.k.n$landuse, prefix = "landuse"))
+data.dummy["landuse"] <- NULL
+trainIds <- createDataPartition(data.dummy$change, p = 0.5, list = FALSE)
+data.k.train <- data.dummy[trainIds,]
+data.k.test <- data.dummy[-trainIds,]
+cv_strata_l <- length(unique((data.dummy[,"cv_strata"])))
+indices <- CreateSpacetimeFolds(data.dummy, spacevar = "cv_strata", k = cv_strata_l)
+ctrl <- trainControl(method = "cv", index = indices$index)
+
+predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
+                "landuse.1", "landuse.2", "landuse.3", "landuse.4", "landuse.6")
+
+trained.k <- ffs(data.dummy[,predictors], data.dummy[,"change"],
+                 method = "glm",
+                 family = "binomial",
+                 trControl = ctrl)
+calc_roc(trained.k$finalModel, test_data = data.k.train)
+
+
+trained.perfect.k <- trained.k
+
+###########################################################
+# manually 
+
+glm.t.k <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
+               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist, 
+               family = "binomial",
+               data = data.k.train)
+glm.t.d <- glm(formula = change ~ factor(landuse) + x+y+ built_dens + pop_dens + slope + 
+               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+               family = "binomial",
+               data = data.d)
+glm.t.s <- glm(formula = change ~ factor(landuse) + x+y+  built_dens + pop_dens + slope + 
+               mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+               family = "binomial",
+               data = data.s)
+summary(glm.t.k)
+summary(glm.t.d)
+summary(glm.t.s)
+
+calc_roc(glm.t.k, test_data = data.test)
+calc_roc(glm.t.d)
+calc_roc(glm.t.s)
+
+
 
 
 ##############################################################
 # significant factors stratified samples
-glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + mRoads_dist, # + pop_dens, 
+glm.t.k.s <- glm(formula = change ~ factor(landuse) +  built_dens + slope,# + slope + center_dist, 
                  family = "binomial",
                  data = data.k.train)
 summary(glm.t.k.s)
@@ -208,28 +261,7 @@ summary(glm.t.dsys.s)
 
 
 
-############################################################################################################################
-###################### ROC functions #######################################################################################
-############################################################################################################################
 
-# see: https://stackoverflow.com/questions/18449013/r-logistic-regression-area-under-curve
-calc_roc <- function(model, test_data = NULL) {
-  if(is.null(test_data)){
-    prob = predict(model, type = c("response"))
-    model$data$prob = prob
-    g <- roc(model$data$change ~ prob, data = model$data)
-    print("model data")
-  } else {
-    prob = predict(model, newdata = test_data, type = c("response"))
-    # test_data$prob = prob
-    g <- roc(test_data$change ~ prob, data = test_data)
-    print("test data")
-  }
-  
-  plot.roc(g, print.auc = TRUE, print.auc.x = 0.3, print.auc.y = 0)
-  
-  return(g$auc)
-}
 
 
 
