@@ -1,12 +1,12 @@
 rm(list=ls())
 
-#library(raster)
+library(raster)
 #library(sp)
 #library(dplyr)
-library(spdep)
+library(spdep) # morans
 #library(lctools)
 #library(spcosa)
-library(splitstackshape)
+library(splitstackshape) # stratified
 
 set.seed(21)
 
@@ -49,14 +49,14 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 5)), ("created/sa
 
 
 ###################################################################################################################
-# 494 - 1332 samples
-# Morans I: 0.26- 0.40
+# 
+#
 ###################################################################################################################
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
 write.csv((samples_dresden <- stratified_sampling(stack_dresden, 7)), ("created/samples/stratified/dresden.csv"))
-write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 7)), ("created/samples/stratified/sevilla.csv"))
-write.csv((samples_krakow <- stratified_sampling(stack_krakow, 7)), ("created/samples/stratified/krakow.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 8)), ("created/samples/stratified/sevilla.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 12)), ("created/samples/stratified/krakow.csv"))
 
 
 
@@ -89,17 +89,34 @@ write.csv((samples_krakow <- strata_sampling(stack_krakow, 16)), ("created/sampl
 
 
 
+
 str(samples_dresden)
 str(samples_sevilla)
 str(samples_krakow)
 
-calc_moransI(samples_dresden)
-calc_moransI(samples_sevilla)
-calc_moransI(samples_krakow)
+system.time(calc_moransI(samples_sevilla_all))
 
-sum(samples_krakow)
+calc_moransI(samples_dresden, dist = 1115)
+calc_moransI(samples_sevilla, dist = 1325)
+calc_moransI(samples_krakow, dist = 1332)
+calc_moransI(samples_dresden, k = 8)
+calc_moransI(samples_sevilla, k = 8)
+calc_moransI(samples_krakow, k = 8)
+# .25 .36 .24
 
+calc_moransI(samples_dresden_all, k = 8)
+calc_moransI(samples_sevilla_all, k = 8)
+calc_moransI(samples_krakow_all, k = 8)
 
+# process in parallel
+library(doParallel) 
+cl <- makeCluster(detectCores(), type='PSOCK')
+registerDoParallel(cl)
+
+# turn parallel processing off and run sequentially again:
+registerDoSEQ()
+
+calc_moransI(samples_krakow_all)
 
 ########################################################################################
 ######################### functions ####################################################
@@ -115,9 +132,9 @@ create_df_without_NA <- function(stack) {
   return(df_noNA)
 }
 
-# write.csv(create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
-# write.csv(create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
-# write.csv(create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
+write.csv(samples_dresden_all <- create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
+write.csv(samples_sevilla_all <- create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
+write.csv(samples_krakow_all <- create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
 
 
 ########################################################################################
@@ -286,6 +303,8 @@ stratified_sampling <- function(stack, window_size = 5) {
   # calc strata numbers 
   strata <- calc_strata_no(cell_no, window_size, raster_cols)
   df["strata"] <- strata     # and add to data frame
+  strata.cv <- calc_strata_no(cell_no, 200, raster_cols)
+  df["cv_strata"] <- strata.cv
   
   # sample dataframe stratified
   df.strat <- stratified(df, c("strata"), size = 1, keep.rownames = TRUE)
@@ -327,6 +346,8 @@ strata_sampling <- function(stack, window_size = 5) {
   # calc strata numbers 
   strata <- calc_strata_no(cell_no, window_size, raster_cols)
   df["strata"] <- strata     # and add to data frame
+  strata.cv <- calc_strata_no(cell_no, 200, raster_cols)
+  df["cv_strata"] <- strata.cv
   
   # sample dataframe stratified
   df.strat.1 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "1"), keep.rownames = TRUE)
@@ -361,27 +382,44 @@ calc_strata_no <- function(cell_vector, window_size, raster_cols){
 ########################################################################################################
 
 
-calc_moransI <- function(samples) {
+calc_moransI <- function(samples, dist = NULL, k = NULL) {
+  
   # get coordinates as matrix
   coords <- as.matrix(cbind(samples$x, samples$y))
   
-  # identify neighbours
-  # within the minimum distance so every sample has at least one neighbour
-  k1 <- knn2nb(knearneigh(coords))
-  k1dists <- unlist(nbdists(k1, coords))
-  # summary(k1dists)
-  nb_maxdist <- dnearneigh(coords, 0, max(k1dists))
-  print(nb_maxdist)
+  if(!is.null(dist)) {
+    
+    nb <- dnearneigh(coords, 0, dist)
+    
+  } else if(!is.null(k)) {
+    
+    nb <- knn2nb(knearneigh(coords, k = k))
+    
+  } else {
+    
+    # identify neighbours
+    # within the minimum distance so every sample has at least one neighbour
+    k1 <- knn2nb(knearneigh(coords))
+    k1dists <- unlist(nbdists(k1, coords))
+    # summary(k1dists)
+    nb <- dnearneigh(coords, 0, max(k1dists))
+    print("max dist:")
+    print(max(k1dists))
+    
+  }
+  
+  print(nb)
   
   # get neighbour list
-  lw <- nb2listw(nb_maxdist,zero.policy = T)
+  lw <- nb2listw(nb,zero.policy = T)
+  
+  # lw_k1 <- nb2listw(k1, zero.policy = T)
   
   # calculate Morans I
   morans <- moran.test(samples$change, lw, randomisation = F, alternative = "two.sided", zero.policy = T)
   
   return(morans)
 }
-
 
 
 # seed <- 22
