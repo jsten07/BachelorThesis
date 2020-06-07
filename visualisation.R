@@ -1,6 +1,8 @@
-# rm(list=ls())
-# source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/regression.R")
+ rm(list=ls())
+ source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/regression.R")
 
+ library(formattable)
+ 
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
 data.k <- read.csv("krakow.csv")
@@ -18,6 +20,7 @@ data.s.a <- read.csv("sevilla_all.csv")
 
 trained.s <- ffs_model(data.s)
 model.s.ffs <- trained.s$ffs$finalModel
+model.s.glm <- trained.s$glm$sig
 summary(model.s.ffs)
 calc_roc(model.s.ffs, test_data = split_landuse(data.s.a))
 logit.plot.quad(model.s.ffs)
@@ -25,6 +28,7 @@ logit.plot.quad(model.s.ffs)
 
 trained.d <- ffs_model(data.d)
 model.d.ffs <- trained.d$ffs$finalModel
+model.d.glm <- trained.d$glm$sig
 summary(model.d.ffs)
 calc_roc(model.d.ffs, test_data = split_landuse(data.d.a))
 logit.plot.quad(model.d.ffs)
@@ -32,6 +36,7 @@ logit.plot.quad(model.d.ffs)
 
 trained.k <- ffs_model(data.k)
 model.k.ffs <- trained.k$ffs$finalModel
+model.k.glm <- trained.k$glm$sig
 summary(model.k.ffs)$coefficients[,1]
 calc_roc(model.k.ffs)
 logit.plot.quad(model.k.ffs)
@@ -42,21 +47,47 @@ logit.plot.quad(model.k.ffs)
 compare_coefs <- function(model1, model2, model3) {
   
   
-  predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
+  predictors <- c("(Intercept)", "built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
                   "landuse.1", "landuse.2", "landuse.3", "landuse.4", "landuse.6")
   
-  coefs <- matrix(, nrow = length(predictors), ncol = 3)
+  coefs <- matrix(, nrow = length(predictors), ncol = 6)
   
   rownames(coefs) <- predictors
+  colnames(coefs) <- c(deparse(substitute(model1)), "p1", deparse(substitute(model2)), "p2", deparse(substitute(model3)), "p3")
+  
+  #coefs.sign <- coefs
   
   # models als liste übergeben um darüber zu iterieren?
-  for (i in models) {
-    coefs <- 
+  for (i in predictors) {
+    if(i %in% names(model1$coefficients)) {
+      coefs[i,1] <- model1$coefficients[i]
+      coefs[i,2] <- summary(model1)$coefficients[i,4]
+    }
+    if(i %in% names(model2$coefficients)) {
+      coefs[i,3] <- model2$coefficients[i]
+      coefs[i,4] <- summary(model2)$coefficients[i,4]
+    }
+    if(i %in% names(model3$coefficients)) {
+      coefs[i,5] <- model3$coefficients[i]
+      coefs[i,6] <- summary(model3)$coefficients[i,4]
+    }
   }
   
-  as.table(coefs)
+  # options(scipen = 20, digits = 3)
   
+  coefs <- as.data.frame(coefs)
+  #coefs.sign <- as.data.frame(coefs.sign)
+  
+  print(formattable(coefs, digits = 5))
+  # print(formattable(coefs.sign, digits = 3, title = "p-value"))
+  
+  return(coefs)
 }
+
+
+compare_coefs(model.d.ffs, model.s.ffs, model.k.ffs)
+compare_coefs(model.d.glm, model.s.glm, model.k.glm)
+
 
 
 ############################################################################

@@ -64,6 +64,8 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5)
   # split landuse in single binary variables
   # data.k.dummy <- cbind(data.k, to.dummy(data.k$landuse, prefix = "landuse"))
   
+  # data <- split_landuse(data)
+  
   # split data in train and test part
   if(split == T)   {
     trainIds <- createDataPartition(data$X, p = train_part, list = FALSE)
@@ -76,13 +78,21 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5)
   
   
   # create model with all variables
-  model <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
-               family = "binomial",
-               data = data.train)
+  if (!("landuse.3" %in% colnames(data))) {
+    model <- glm(formula = change ~ landuse.1 + landuse.2 + landuse.4 + landuse.6 + built_dens + pop_dens + slope + 
+                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+                 family = "binomial",
+                 data = data.train)
+  } else {
+    model <- glm(formula = change ~ landuse.1 + landuse.2 +  landuse.3 + landuse.4 + landuse.6 + built_dens + pop_dens + slope + 
+                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+                 family = "binomial",
+                 data = data.train)
+  }
+  
   
   # 
-  formula <- "change ~ factor(landuse) "
+  formula <- "change ~"
   
   # find signifcant variables and add them to the formula for the new model
   for (i in c(6:length(summary(model)$coefficients[,4]))) {
@@ -141,9 +151,7 @@ library(CAST)
 ffs_model <- function(data) {
 
   # split landuse 
-  predictors <- c("change", "built_dens", "pop_dens", "slope", "landuse", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist", "cv_strata")
-  data.dummy <- cbind(data[,predictors], to.dummy(data$landuse, prefix = "landuse"))
-  data.dummy["landuse"] <- NULL
+  data.dummy <- split_landuse(data)
 
   # create folds for cross validation
   cv_strata_l <- length(unique((data.dummy[,"cv_strata"])))
@@ -168,6 +176,8 @@ ffs_model <- function(data) {
                  mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                  family = "binomial",
                  data = data)
+  
+  trained$glm$sig <- create_model(data.dummy, split = F)
   
   trained$cv_strata <- cv_strata_l
   
@@ -207,13 +217,18 @@ ffs_model <- function(data) {
 
 
 split_landuse <- function(data) {
-  predictors <- c("change", "built_dens", "pop_dens", "slope", "landuse", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist")
+  if("cv_strata" %in% colnames(data)) {
+    predictors <- c("change", "built_dens", "pop_dens", "slope", "landuse", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist", "cv_strata")
+  } else {
+    predictors <- c("change", "built_dens", "pop_dens", "slope", "landuse", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist")
+  }
+  
   data.dummy <- cbind(data[,predictors], to.dummy(data$landuse, prefix = "landuse"))
   data.dummy["landuse"] <- NULL
   
-  if (!("landuse.3" %in% colnames(data.dummy))) {
-    data.dummy["landuse.3"] <- NULL
-  }
+  # if (!("landuse.3" %in% colnames(data.dummy))) {
+  #   data.dummy["landuse.3"] <- NULL
+  # }
   # if (!("cv_strata" %in% colnames(data.dummy))) {
   #   data.dummy["cv_strata"] <- NULL
   # }
