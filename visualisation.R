@@ -1,7 +1,13 @@
- rm(list=ls())
- source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/regression.R")
+rm(list=ls())
 
- library(formattable)
+
+#########################################################################################
+# results
+#########################################################################################
+
+source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/regression.R")
+
+library(formattable)
  
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 
@@ -21,22 +27,25 @@ data.s.a <- read.csv("sevilla_all.csv")
 trained.s <- ffs_model(data.s)
 model.s.ffs <- trained.s$ffs$finalModel
 model.s.glm <- trained.s$glm$sig
+model.s.glmA <- trained.s$glm
 summary(model.s.ffs)
-calc_roc(model.s.ffs, test_data = split_landuse(data.s.a))
+calc_roc(model.s.ffs)
 logit.plot.quad(model.s.ffs)
 
 
 trained.d <- ffs_model(data.d)
 model.d.ffs <- trained.d$ffs$finalModel
 model.d.glm <- trained.d$glm$sig
+model.d.glmA <- trained.d$glm
 summary(model.d.ffs)
-calc_roc(model.d.ffs, test_data = split_landuse(data.d.a))
+calc_roc(model.d.ffs)
 logit.plot.quad(model.d.ffs)
 
 
 trained.k <- ffs_model(data.k)
 model.k.ffs <- trained.k$ffs$finalModel
 model.k.glm <- trained.k$glm$sig
+model.k.glmA <- trained.k$glm
 summary(model.k.ffs)$coefficients[,1]
 calc_roc(model.k.ffs)
 logit.plot.quad(model.k.ffs)
@@ -48,7 +57,7 @@ compare_coefs <- function(model1, model2, model3) {
   
   
   predictors <- c("(Intercept)", "built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
-                  "landuse.1", "landuse.2", "landuse.3", "landuse.4", "landuse.6")
+                  "landuse1", "landuse2", "landuse3", "landuse4", "landuse5", "landuse6", "aic", "roc")
   
   coefs <- matrix(, nrow = length(predictors), ncol = 6)
   
@@ -73,20 +82,59 @@ compare_coefs <- function(model1, model2, model3) {
     }
   }
   
-  # options(scipen = 20, digits = 3)
+  coefs["aic", 1] <- model1$aic
+  coefs["aic", 3] <- model2$aic
+  coefs["aic", 5] <- model3$aic
+  
+  coefs["roc", 1] <- calc_roc(model1)
+  coefs["roc", 3] <- calc_roc(model2)
+  coefs["roc", 5] <- calc_roc(model3)
+  
+  options(scipen = 99, digits = 3)
   
   coefs <- as.data.frame(coefs)
   #coefs.sign <- as.data.frame(coefs.sign)
   
-  print(formattable(coefs, digits = 5))
+  print(formattable(coefs, format = "f", digits = 5))
   # print(formattable(coefs.sign, digits = 3, title = "p-value"))
   
   return(coefs)
 }
 
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/results/models/")
 
-compare_coefs(model.d.ffs, model.s.ffs, model.k.ffs)
-compare_coefs(model.d.glm, model.s.glm, model.k.glm)
+ffs_models <- compare_coefs(model.d.ffs, model.s.ffs, model.k.ffs)
+write.csv(ffs_models, "ffs_models.csv")
+glm_models <- compare_coefs(model.d.glm, model.s.glm, model.k.glm)
+write.csv(glm_models, "glm_models.csv")
+glm_allV_models <- compare_coefs(trained.d$glm, trained.s$glm, trained.k$glm)
+write.csv(glm_allV_models, "glm_allV_models.csv")
+
+
+
+
+
+
+#########################################################################################
+# data
+#########################################################################################
+# source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/preparation_functions.R")
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
+
+# load grids
+stack_dresden <- stack("created/stack/dresden.grd")
+stack_krakow <- stack("created/stack/krakow.grd")
+stack_sevilla <- stack("created/stack/sevilla.grd")
+
+# add units
+# change and landuse as categorical
+plot(stack_dresden)
+plot(stack_krakow)
+plot(stack_sevilla)
+
+
+
+
 
 
 
@@ -139,3 +187,8 @@ logit.plot.quad <- function(model, threshold=0.5, title="Model success") {
   title(sub=paste("Sensitivity:", round(tp/(tp+fp),4),
                   "; Specificity:", round(tn/(tn+fn),4)), line=4)
 }
+
+
+
+
+
