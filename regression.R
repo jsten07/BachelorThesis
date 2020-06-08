@@ -73,7 +73,7 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5,
     data.test <- data[-trainIds,]
   } else {
     data.train <- data
-    data.test <- data
+    # data.test <- data
   }
   
   
@@ -104,7 +104,8 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5,
   }
   
   # calculate roc of new model
-  model.s.roc <- calc_roc(model.s, test_data = data.test)
+  model.s.roc <- calc_roc(model.s)
+                          #, test_data = data.test)
   print(model.s.roc)
   
   return(model.s)
