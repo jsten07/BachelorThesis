@@ -59,7 +59,7 @@ setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/stratified/")
 ###################### functions #######################################################################################
 ############################################################################################################################
 
-create_model <- function(data, significance = 0.05, split = T, train_part = 0.5) {
+create_model <- function(data, significance = 0.05, split = T, train_part = 0.5, select = T) {
   
   # split landuse in single binary variables
   # data.k.dummy <- cbind(data.k, to.dummy(data.k$landuse, prefix = "landuse"))
@@ -79,12 +79,12 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5)
   
   # create model with all variables
   if (!("landuse.3" %in% colnames(data))) {
-    model <- glm(formula = change ~ landuse.1 + landuse.2 + landuse.4 + landuse.6 + built_dens + pop_dens + slope + 
-                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+    model <- glm(formula = change ~ landuse.1 + landuse.2 + landuse.4 + landuse.5 + landuse.6 + built_dens + pop_dens + slope + 
+                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist + 0,
                  family = "binomial",
                  data = data.train)
   } else {
-    model <- glm(formula = change ~ landuse.1 + landuse.2 +  landuse.3 + landuse.4 + landuse.6 + built_dens + pop_dens + slope + 
+    model <- glm(formula = change ~ landuse.1 + landuse.2 +  landuse.3 + landuse.4 + (landuse.6+0) + built_dens + pop_dens + slope + 
                    mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                  family = "binomial",
                  data = data.train)
@@ -106,6 +106,10 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5)
                  family = "binomial",
                  data = data.train)
   
+  if(select == F) {
+    model.s <- model
+  }
+  
   # calculate roc of new model
   model.s.roc <- calc_roc(model.s, test_data = data.test)
   print(model.s.roc)
@@ -122,7 +126,12 @@ calc_roc <- function(model, test_data = NULL) {
   if(is.null(test_data)){
     prob = predict(model, type = c("response"))
     model$data$prob = prob
-    g <- roc(model$model$.outcome ~ prob, data = model$data)
+    if (is.null(model$model$.outcome)) {
+      g <- roc(model$model$change ~ prob, data = model$data)
+    } else {
+      g <- roc(model$model$.outcome ~ prob, data = model$data)
+    }
+    
     print("model data")
   } else {
     prob = predict(model, newdata = test_data, type = c("response"))
@@ -166,16 +175,20 @@ ffs_model <- function(data) {
     predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
                     "landuse.1", "landuse.2", 
                     #"landuse.3", 
-                    "landuse.4", "landuse.6")
+                    "landuse.4", "landuse.5", "landuse.6")
   }
+  
+  predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist", "factor(landuse)")
   
   trained <- deparse(substitute(data))
   
   # create model with all variables
-  trained$glm <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
-                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
-                 family = "binomial",
-                 data = data)
+  # trained$glm <- glm(formula = change ~ factor(landuse) + built_dens + pop_dens + slope + 
+  #                mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
+  #                family = "binomial",
+  #                data = data.dummy)
+  
+  trained$glm <- create_model(data.dummy, split = F, select = F)
   
   trained$glm$sig <- create_model(data.dummy, split = F)
   
