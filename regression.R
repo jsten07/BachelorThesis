@@ -78,17 +78,10 @@ create_model <- function(data, significance = 0.05, split = T, train_part = 0.5,
   
   
   # create model with all variables
-  if (!("landuse.3" %in% colnames(data))) {
-    model <- glm(formula = change ~ landuse.1 + landuse.2 + landuse.4 + landuse.5 + landuse.6 + built_dens + pop_dens + slope + 
-                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist + 0,
+  model <- glm(formula = change ~ landuse + built_dens + pop_dens + slope + 
+                 mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
                  family = "binomial",
                  data = data.train)
-  } else {
-    model <- glm(formula = change ~ landuse.1 + landuse.2 +  landuse.3 + landuse.4 + (landuse.6+0) + built_dens + pop_dens + slope + 
-                   mRoads_dist + pRoads_dist + river_dist + train_dist + center_dist + airport_dist,
-                 family = "binomial",
-                 data = data.train)
-  }
   
   
   # 
@@ -160,7 +153,8 @@ library(CAST)
 ffs_model <- function(data) {
 
   # split landuse 
-  data.dummy <- split_landuse(data)
+  data.dummy <- data
+  data.dummy$landuse <- as.factor(data.dummy$landuse)
 
   # create folds for cross validation
   cv_strata_l <- length(unique((data.dummy[,"cv_strata"])))
@@ -168,17 +162,8 @@ ffs_model <- function(data) {
   ctrl <- trainControl(method = "cv", index = indices$index)
   
   # check for predictors (because landuse 3 is not existent in sevilla data)
-  if ("landuse.3" %in% colnames(data.dummy)) {
-    predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
-                    "landuse.1", "landuse.2", "landuse.3", "landuse.4", "landuse.6")
-  } else {
-    predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
-                    "landuse.1", "landuse.2", 
-                    #"landuse.3", 
-                    "landuse.4", "landuse.5", "landuse.6")
-  }
+  predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist", "landuse")
   
-  predictors <- c("built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist", "factor(landuse)")
   
   trained <- deparse(substitute(data))
   
