@@ -23,7 +23,7 @@ stack_sevilla <- stack("created/stack/sevilla.grd")
 
 ###################################################################################################################
 # 820 - 878 samples
-# Morans I: 0.25 - 0.29
+# Morans I: 0.25 - 0.29 / 0.26 - 0.40 (k = 8)
 # AUC: 0.86 - 0.89
 ###################################################################################################################
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
@@ -49,8 +49,8 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 5)), ("created/sa
 
 
 ###################################################################################################################
-# 
-#
+# 464 - 494
+# 0.24 - 0.37 (k = 8)
 ###################################################################################################################
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
@@ -102,7 +102,11 @@ calc_moransI(samples_krakow, dist = 1332)
 calc_moransI(samples_dresden, k = 8)
 calc_moransI(samples_sevilla, k = 8)
 calc_moransI(samples_krakow, k = 8)
-# .25 .36 .24
+
+calc_moransI(data.d, k = 8)
+calc_moransI(data.s, k = 8)
+calc_moransI(data.k, k = 8)
+
 
 calc_moransI(samples_dresden_all, k = 8)
 calc_moransI(samples_sevilla_all, k = 8)
@@ -298,6 +302,7 @@ stratified_sampling <- function(stack, window_size = 5) {
   raster_cols <- ncol(stack)
   
   df <- as.data.frame(stack, xy = T)
+  df$landuse <- as.factor(df$landuse)
   cell_no <- as.integer(row.names(df))
   
   # calc strata numbers 
@@ -341,6 +346,7 @@ strata_sampling <- function(stack, window_size = 5) {
   raster_cols <- ncol(stack)
   
   df <- as.data.frame(stack, xy = T)
+  df$landuse <- as.factor(df$landuse)
   cell_no <- as.integer(row.names(df))
   
   # calc strata numbers 
