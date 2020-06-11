@@ -15,16 +15,20 @@ data.k <- read.csv("krakow.csv")
 data.d <- read.csv("dresden.csv")
 data.s <- read.csv("sevilla.csv")
 
-data.k2 <- read.csv("krakow_2.csv")
-data.d2 <- read.csv("dresden_2.csv")
-data.s2 <- read.csv("sevilla_2.csv")
+data.k2 <- read.csv("krakow_lu90.csv")
+data.d2 <- read.csv("dresden_lu90.csv")
+data.s2 <- read.csv("sevilla_lu90.csv")
+
+data.k.i <- read.csv("krakow_i900.csv")
+data.d.i <- read.csv("dresden_i900.csv")
+data.s.i <- read.csv("sevilla_i900.csv")
 
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/samples/")
 data.k.a <- read.csv("krakow_all.csv")
 data.d.a <- read.csv("dresden_all.csv")
 data.s.a <- read.csv("sevilla_all.csv")
 
-trained.s <- ffs_model(data.s)
+trained.s <- ffs_model(data.s2)
 model.s.ffs <- trained.s$ffs$finalModel
 model.s.glm <- trained.s$glm$sig
 model.s.glmA <- trained.s$glm
@@ -33,7 +37,7 @@ calc_roc(model.s.ffs)
 logit.plot.quad(model.s.ffs)
 
 
-trained.d <- ffs_model(data.d)
+trained.d <- ffs_model(data.d2)
 model.d.ffs <- trained.d$ffs$finalModel
 model.d.glm <- trained.d$glm$sig
 model.d.glmA <- trained.d$glm
@@ -42,7 +46,7 @@ calc_roc(model.d.ffs)
 logit.plot.quad(model.d.ffs)
 
 
-trained.k <- ffs_model(data.k)
+trained.k <- ffs_model(data.k2)
 model.k.ffs <- trained.k$ffs$finalModel
 model.k.glm <- trained.k$glm$sig
 model.k.glmA <- trained.k$glm
@@ -57,7 +61,7 @@ compare_coefs <- function(model1, model2, model3) {
   
   
   predictors <- c("(Intercept)", "built_dens", "pop_dens", "slope", "mRoads_dist", "pRoads_dist", "river_dist", "train_dist", "center_dist", "airport_dist",
-                  "landuse1", "landuse2", "landuse3", "landuse4", "landuse5", "landuse6", "aic", "roc")
+                  "landuse1", "landuse2", "landuse3", "landuse4", "landuse5", "landuse6", "aic", "roc", "Morans I")
   
   coefs <- matrix(, nrow = length(predictors), ncol = 6)
   
@@ -90,6 +94,11 @@ compare_coefs <- function(model1, model2, model3) {
   coefs["roc", 3] <- calc_roc(model2)
   coefs["roc", 5] <- calc_roc(model3)
   
+  message("Check data for Morans!")
+  coefs["Morans I", 1] <- calc_moransI(data.d2)$estimate[1]
+  coefs["Morans I", 3] <- calc_moransI(data.s2)$estimate[1]
+  coefs["Morans I", 5] <- calc_moransI(data.k2)$estimate[1]
+  
   options(scipen = 99, digits = 3)
   
   coefs <- as.data.frame(coefs)
@@ -104,11 +113,15 @@ compare_coefs <- function(model1, model2, model3) {
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/results/models/")
 
 ffs_models <- compare_coefs(model.d.ffs, model.s.ffs, model.k.ffs)
-write.csv(ffs_models, "ffs_models.csv")
+write.csv(ffs_models, "ffs_models_lu90.csv")
 glm_models <- compare_coefs(model.d.glm, model.s.glm, model.k.glm)
-write.csv(glm_models, "glm_models.csv")
+write.csv(glm_models, "glm_models_lu90.csv")
 glm_allV_models <- compare_coefs(trained.d$glm, trained.s$glm, trained.k$glm)
-write.csv(glm_allV_models, "glm_allV_models.csv")
+write.csv(glm_allV_models, "glm_allV_models_lu90.csv")
+train_models <- compare_coefs(trained.d$train$finalModel, trained.s$train$finalModel, trained.k$train$finalModel)
+write.csv(train_models, "train_models_lu90.csv")
+train_models <- compare_coefs(trained.d$ffs_plus$finalModel, trained.s$ffs_plus$finalModel, trained.k$ffs_plus$finalModel)
+write.csv(train_models, "ffs_plus_models_lu90.csv")
 
 
 
@@ -128,13 +141,19 @@ stack_sevilla <- stack("created/stack/sevilla.grd")
 
 # add units
 # change and landuse as categorical
+
+# dependet in seperate plot
+# show original data to used data
 plot(stack_dresden)
 plot(stack_krakow)
 plot(stack_sevilla)
 
 
+############################################################################
+# landuse
+############################################################################
 
-
+# show absolute and relative values for (no) change / landuse ratio
 
 
 
