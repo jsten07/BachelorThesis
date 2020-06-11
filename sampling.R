@@ -15,9 +15,9 @@ set.seed(21)
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 
 # load grids
-stack_dresden <- stack("created/stack/dresden.grd")
-stack_krakow <- stack("created/stack/krakow.grd")
-stack_sevilla <- stack("created/stack/sevilla.grd")
+stack_dresden <- stack("created/stack/dresden_lu90.grd")
+stack_krakow <- stack("created/stack/krakow_lu90.grd")
+stack_sevilla <- stack("created/stack/sevilla_lu90.grd")
 
 
 
@@ -28,9 +28,9 @@ stack_sevilla <- stack("created/stack/sevilla.grd")
 ###################################################################################################################
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
-write.csv((samples_dresden <- stratified_sampling(stack_dresden, 5)), ("created/samples/stratified/dresden.csv"))
-write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 6)), ("created/samples/stratified/sevilla.csv"))
-write.csv((samples_krakow <- stratified_sampling(stack_krakow, 9)), ("created/samples/stratified/krakow.csv"))
+write.csv((samples_dresden <- stratified_sampling(stack_dresden, 5)), ("created/samples/stratified/dresden_lu90.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 6)), ("created/samples/stratified/sevilla_lu90.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 9)), ("created/samples/stratified/krakow_lu90.csv"))
 
 
 
@@ -54,9 +54,9 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 5)), ("created/sa
 ###################################################################################################################
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
-write.csv((samples_dresden <- stratified_sampling(stack_dresden, 7)), ("created/samples/stratified/dresden.csv"))
-write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 8)), ("created/samples/stratified/sevilla.csv"))
-write.csv((samples_krakow <- stratified_sampling(stack_krakow, 12)), ("created/samples/stratified/krakow.csv"))
+write.csv((samples_dresden <- stratified_sampling(stack_dresden, 7)), ("created/samples/stratified/dresden_500.csv"))
+write.csv((samples_sevilla <- stratified_sampling(stack_sevilla, 8)), ("created/samples/stratified/sevilla_500.csv"))
+write.csv((samples_krakow <- stratified_sampling(stack_krakow, 12)), ("created/samples/stratified/krakow_500.csv"))
 
 
 
@@ -69,9 +69,9 @@ write.csv((samples_krakow <- stratified_sampling(stack_krakow, 12)), ("created/s
 ###################################################################################################################
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
 set.seed(13)
-write.csv((samples_dresden <- strata_sampling(stack_dresden, 24)), ("created/samples/stratified/dresden_new.csv"))
-write.csv((samples_sevilla <- strata_sampling(stack_sevilla, 16)), ("created/samples/stratified/sevilla_new.csv"))
-write.csv((samples_krakow <- strata_sampling(stack_krakow, 28)), ("created/samples/stratified/krakow_new.csv"))
+write.csv((samples_dresden <- strata_sampling(stack_dresden, 24)), ("created/samples/stratified/dresden_i900.csv"))
+write.csv((samples_sevilla <- strata_sampling(stack_sevilla, 16)), ("created/samples/stratified/sevilla_i900.csv"))
+write.csv((samples_krakow <- strata_sampling(stack_krakow, 28)), ("created/samples/stratified/krakow_i900.csv"))
 
 
 ###################################################################################################################
@@ -98,10 +98,14 @@ system.time(calc_moransI(samples_sevilla_all))
 
 calc_moransI(samples_dresden, dist = 1115)
 calc_moransI(samples_sevilla, dist = 1325)
-calc_moransI(samples_krakow, dist = 1332)
+calc_moransI(samples_krakow, dist = 1335)
 calc_moransI(samples_dresden, k = 8)
 calc_moransI(samples_sevilla, k = 8)
 calc_moransI(samples_krakow, k = 8)
+
+calc_moransI(samples_dresden)
+calc_moransI(samples_sevilla)
+calc_moransI(samples_krakow)
 
 calc_moransI(data.d, k = 8)
 calc_moransI(data.s, k = 8)
@@ -136,9 +140,160 @@ create_df_without_NA <- function(stack) {
   return(df_noNA)
 }
 
-write.csv(samples_dresden_all <- create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
-write.csv(samples_sevilla_all <- create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
-write.csv(samples_krakow_all <- create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
+# write.csv(samples_dresden_all <- create_df_without_NA(stack_dresden), "created/samples/dresden_all.csv")
+# write.csv(samples_sevilla_all <- create_df_without_NA(stack_sevilla), "created/samples/sevilla_all.csv")
+# write.csv(samples_krakow_all <- create_df_without_NA(stack_krakow), "created/samples/krakow_all.csv")
+
+
+
+
+#########################################################################################
+## sampling methods
+#########################################################################################
+
+
+
+##############################################################################
+# create strata as square windows
+# choose one record in every strata
+# remove NAs and bring changed and not changed to same amount
+
+stratified_sampling <- function(stack, window_size = 5) {
+  # width of raster (amount of columns)
+  raster_cols <- ncol(stack)
+  
+  df <- as.data.frame(stack, xy = T)
+  df$landuse <- as.factor(df$landuse)
+  cell_no <- as.integer(row.names(df))
+  
+  # calc strata numbers 
+  strata <- calc_strata_no(cell_no, window_size, raster_cols)
+  df["strata"] <- strata     # and add to data frame
+  strata.cv <- calc_strata_no(cell_no, 200, raster_cols)
+  df["cv_strata"] <- strata.cv
+  
+  # sample dataframe stratified
+  df.strat <- stratified(df, c("strata"), size = 1, keep.rownames = TRUE)
+  
+  
+  # remove NA values
+  samples <- df.strat[which(df.strat$change!="NA"), ]
+  sampleschange <- samples[which(samples$change=="1"), ]
+  samplesNochange <- samples[which(samples$change=="0"), ]
+  samplesNochange <- samplesNochange[sample(nrow(samplesNochange), nrow(sampleschange)),]
+  
+  samples <- rbind(sampleschange, samplesNochange)
+  
+  # !!! general problem: samples in strata with few records overrepresented
+  
+  ######################################################
+  # sampleStratified() just works for raster data
+  ######################################################
+  # possibility to use stratified() method in fifer package
+  ######################################################
+  
+  return(samples)
+  
+} 
+
+
+##################################################################################
+# create square strata in window_size
+# choose one changed and one not changed record from every strata (if available)
+# randomly choose not changed samples to get same amount as of changed
+
+strata_sampling <- function(stack, window_size = 5) {
+  # width of raster (amount of columns)
+  raster_cols <- ncol(stack)
+  
+  df <- as.data.frame(stack, xy = T)
+  df$landuse <- as.factor(df$landuse)
+  cell_no <- as.integer(row.names(df))
+  
+  # calc strata numbers 
+  strata <- calc_strata_no(cell_no, window_size, raster_cols)
+  df["strata"] <- strata     # and add to data frame
+  strata.cv <- calc_strata_no(cell_no, 200, raster_cols)
+  df["cv_strata"] <- strata.cv
+  
+  # sample dataframe stratified
+  df.strat.1 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "1"), keep.rownames = TRUE)
+  df.strat.0 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "0"), keep.rownames = TRUE)
+  df.strat.0 <- df.strat.0[sample(nrow(df.strat.0), nrow(df.strat.1)),]
+  
+  samples <- rbind(df.strat.1, df.strat.0)
+  
+  return(samples)
+  
+} 
+
+# samples <- stratified_sampling(stack_dresden, window_size = 5)
+# write.csv(samples, "created/samples/sevilla_strat_test.csv")
+
+# cell_vector: vector with numbers, representing cell numbers of a raster
+# window_size: divide raster in n x n windows; n = window_size
+# raster_cols: width of the raster
+# return: strata number for every raster cell
+calc_strata_no <- function(cell_vector, window_size, raster_cols){
+  cells <- (ceiling((cell_vector%%raster_cols)/window_size)
+            + ceiling((cell_vector/raster_cols)/window_size) * ceiling(raster_cols/window_size))
+  
+  return(cells)
+}
+
+
+
+
+########################################################################################################
+# Moran's I
+########################################################################################################
+
+
+calc_moransI <- function(samples, dist = NULL, k = NULL) {
+  
+  # get coordinates as matrix
+  coords <- as.matrix(cbind(samples$x, samples$y))
+  
+  if(!is.null(dist)) {
+    
+    nb <- dnearneigh(coords, 0, dist)
+    
+  } else if(!is.null(k)) {
+    
+    nb <- knn2nb(knearneigh(coords, k = k))
+    
+  } else {
+    
+    # identify neighbours
+    # within the minimum distance so every sample has at least one neighbour
+    k1 <- knn2nb(knearneigh(coords))
+    k1dists <- unlist(nbdists(k1, coords))
+    # summary(k1dists)
+    nb <- dnearneigh(coords, 0, max(k1dists))
+    print("max dist:")
+    print(max(k1dists))
+    
+  }
+  
+  print(nb)
+  
+  # get neighbour list
+  lw <- nb2listw(nb,zero.policy = T)
+  
+  # lw_k1 <- nb2listw(k1, zero.policy = T)
+  
+  # calculate Morans I
+  morans <- moran.test(samples$change, lw, randomisation = F, alternative = "two.sided", zero.policy = T)
+  
+  return(morans)
+}
+
+
+
+
+
+
+
 
 
 ########################################################################################
@@ -291,141 +446,6 @@ sampleEasy <- function(stack, way = "rate", size = 25) {
 # calc_moransI(sevilla_samples)
 
 
-
-##############################################################################
-# create strata as square windows
-# choose one record in every strata
-# remove NAs and bring changed and not changed to same amount
-
-stratified_sampling <- function(stack, window_size = 5) {
-  # width of raster (amount of columns)
-  raster_cols <- ncol(stack)
-  
-  df <- as.data.frame(stack, xy = T)
-  df$landuse <- as.factor(df$landuse)
-  cell_no <- as.integer(row.names(df))
-  
-  # calc strata numbers 
-  strata <- calc_strata_no(cell_no, window_size, raster_cols)
-  df["strata"] <- strata     # and add to data frame
-  strata.cv <- calc_strata_no(cell_no, 200, raster_cols)
-  df["cv_strata"] <- strata.cv
-  
-  # sample dataframe stratified
-  df.strat <- stratified(df, c("strata"), size = 1, keep.rownames = TRUE)
-  
-  
-  # remove NA values
-  samples <- df.strat[which(df.strat$change!="NA"), ]
-  sampleschange <- samples[which(samples$change=="1"), ]
-  samplesNochange <- samples[which(samples$change=="0"), ]
-  samplesNochange <- samplesNochange[sample(nrow(samplesNochange), nrow(sampleschange)),]
-
-  samples <- rbind(sampleschange, samplesNochange)
-
-  # !!! general problem: samples in strata with few records overrepresented
-  
-  ######################################################
-  # sampleStratified() just works for raster data
-  ######################################################
-  # possibility to use stratified() method in fifer package
-  ######################################################
-  
-  return(samples)
-  
-} 
-
-
-##################################################################################
-# create square strata in window_size
-# choose one changed and one not changed record from every strata (if available)
-# randomly choose not changed samples to get same amount as of changed
-
-strata_sampling <- function(stack, window_size = 5) {
-  # width of raster (amount of columns)
-  raster_cols <- ncol(stack)
-  
-  df <- as.data.frame(stack, xy = T)
-  df$landuse <- as.factor(df$landuse)
-  cell_no <- as.integer(row.names(df))
-  
-  # calc strata numbers 
-  strata <- calc_strata_no(cell_no, window_size, raster_cols)
-  df["strata"] <- strata     # and add to data frame
-  strata.cv <- calc_strata_no(cell_no, 200, raster_cols)
-  df["cv_strata"] <- strata.cv
-  
-  # sample dataframe stratified
-  df.strat.1 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "1"), keep.rownames = TRUE)
-  df.strat.0 <- stratified(df, c("change", "strata"), size = 1, select = list(change = "0"), keep.rownames = TRUE)
-  df.strat.0 <- df.strat.0[sample(nrow(df.strat.0), nrow(df.strat.1)),]
-  
-  samples <- rbind(df.strat.1, df.strat.0)
-  
-  return(samples)
-  
-} 
-
-# samples <- stratified_sampling(stack_dresden, window_size = 5)
-# write.csv(samples, "created/samples/sevilla_strat_test.csv")
-
-# cell_vector: vector with numbers, representing cell numbers of a raster
-# window_size: divide raster in n x n windows; n = window_size
-# raster_cols: width of the raster
-# return: strata number for every raster cell
-calc_strata_no <- function(cell_vector, window_size, raster_cols){
-  cells <- (ceiling((cell_vector%%raster_cols)/window_size)
-            + ceiling((cell_vector/raster_cols)/window_size) * ceiling(raster_cols/window_size))
-  
-  return(cells)
-}
-
-
-
-
-########################################################################################################
-# Moran's I
-########################################################################################################
-
-
-calc_moransI <- function(samples, dist = NULL, k = NULL) {
-  
-  # get coordinates as matrix
-  coords <- as.matrix(cbind(samples$x, samples$y))
-  
-  if(!is.null(dist)) {
-    
-    nb <- dnearneigh(coords, 0, dist)
-    
-  } else if(!is.null(k)) {
-    
-    nb <- knn2nb(knearneigh(coords, k = k))
-    
-  } else {
-    
-    # identify neighbours
-    # within the minimum distance so every sample has at least one neighbour
-    k1 <- knn2nb(knearneigh(coords))
-    k1dists <- unlist(nbdists(k1, coords))
-    # summary(k1dists)
-    nb <- dnearneigh(coords, 0, max(k1dists))
-    print("max dist:")
-    print(max(k1dists))
-    
-  }
-  
-  print(nb)
-  
-  # get neighbour list
-  lw <- nb2listw(nb,zero.policy = T)
-  
-  # lw_k1 <- nb2listw(k1, zero.policy = T)
-  
-  # calculate Morans I
-  morans <- moran.test(samples$change, lw, randomisation = F, alternative = "two.sided", zero.policy = T)
-  
-  return(morans)
-}
 
 
 # seed <- 22
