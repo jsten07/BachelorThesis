@@ -98,23 +98,38 @@ citySlopeAsPercentage <- function(slope_raster, boundary, epsg) {
 }
 
 
-reclassify_landuse <- function(landuse_raster) {
+reclassify_landuse <- function(landuse_raster, year = 1990) {
   # 1: artificial
   # 2: crop
   # 3: pasture
   # 4: forest
   # 5: open / bare land
   # 6: water
-  class.m <- c(111, 142, 1, 
-               211, 223, 2, 
-               241, 244, 2,
-               231, 231, 3,
-               311, 313, 4,
-               323, 324, 4,
-               321, 322, 5,
-               331, 335, 5,
-               411, 422, 5,
-               423, 523, 6)
+  if(year == 2000) {
+    class.m <- c(111, 142, 1, 
+                 211, 223, 2, 
+                 241, 244, 2,
+                 231, 231, 3,
+                 311, 313, 4,
+                 323, 324, 4,
+                 321, 322, 5,
+                 331, 335, 5,
+                 411, 422, 5,
+                 423, 523, 6)
+  } else {
+    class.m <- c(1, 11, 1, 
+                 12, 17, 2, 
+                 19, 22, 2,
+                 18, 18, 3,
+                 23, 25, 4,
+                 28, 29, 4,
+                 26, 27, 5,
+                 30, 34, 5,
+                 35, 38, 5,
+                 39, 44, 6)
+  }
+  
+  
   rcl.m <- matrix(class.m, ncol = 3, byrow = T)
   # +1 in the 'to' column to include this value (interval will be open on the right, to be closed left)
   rcl.m[,2] <- rcl.m[,2]+1
