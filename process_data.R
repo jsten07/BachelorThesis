@@ -50,7 +50,8 @@ krakow_tStations <- shapefile("created/OSM/Krakow_trainStation_singlepart.shp")
 krakow_center <- shapefile("created/OSM/Krakow_townhall.shp")
 krakow_airport <- shapefile("created/OSM/Krakow_airport.shp")
 
-landuse <- raster("original/land cover/clc2006_clc2000_v2018_20_raster100m/CLC2006_CLC2000_V2018_20.tif")
+landuse_2000 <- raster("original/land cover/clc2006_clc2000_v2018_20_raster100m/CLC2006_CLC2000_V2018_20.tif")
+landuse <- raster("original/land cover/u2000_clc1990_v2020_20u1_raster100m/DATA/U2000_CLC1990_V2020_20u1.tif")
 
 
 ########################################################################################
@@ -60,22 +61,22 @@ stack_sevilla <- create_stack(GHSL_ESP_30m, 32630, sevilla_boundaries, GHSL_pop_
                               sevilla_roads, sevilla_primary_roads, sevilla_river, sevilla_tStations, sevilla_center, sevilla_airport)
 stack_sevilla.df <- as.data.frame(getValues(stack_sevilla))
 stack_sevilla.df_noNA <- stack_sevilla.df[which(stack_sevilla.df$change!="NA"), ]
-write.csv(stack_sevilla.df_noNA, "created/stack/sevilla.csv")
-writeRaster(stack_sevilla, "created/stack/sevilla.grd", overwrite = TRUE)
+write.csv(stack_sevilla.df_noNA, "created/stack/sevilla_lu90.csv")
+writeRaster(stack_sevilla, "created/stack/sevilla_lu90.grd", overwrite = TRUE)
 
 stack_dresden <- create_stack(GHSL_GER_30m, 32633, dresden_boundaries, GHSL_pop_POL, 5, slope_GER, landuse, 
                               dresden_roads, dresden_primary_roads, dresden_river, dresden_tStations, dresden_center, dresden_airport)
 stack_dresden.df <- as.data.frame(getValues(stack_dresden))
 stack_dresden.df_noNA <- stack_dresden.df[which(stack_dresden.df$change!="NA"), ]
-write.csv(stack_dresden.df_noNA, "created/stack/dresden.csv")
-writeRaster(stack_dresden, "created/stack/dresden.grd", overwrite = TRUE)
+write.csv(stack_dresden.df_noNA, "created/stack/dresden_li90.csv")
+writeRaster(stack_dresden, "created/stack/dresden_lu90.grd", overwrite = TRUE)
 
 stack_krakow <- create_stack(GHSL_POL_30m, 32634, krakow_boundaries, GHSL_pop_POL, 5, slope_POL, landuse, 
                               krakow_roads, krakow_primary_roads, krakow_river, krakow_tStations, krakow_center, krakow_airport)
 stack_krakow.df <- as.data.frame(getValues(stack_krakow))
 stack_krakow.df_noNA <- stack_krakow.df[which(stack_krakow.df$change!="NA"), ]
-write.csv(stack_krakow.df_noNA, "created/stack/krakow.csv")
-writeRaster(stack_krakow, "created/stack/krakow.grd", overwrite = TRUE)
+write.csv(stack_krakow.df_noNA, "created/stack/krakow_lu90.csv")
+writeRaster(stack_krakow, "created/stack/krakow_lu90.grd", overwrite = TRUE)
 
 
 
