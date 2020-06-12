@@ -133,6 +133,8 @@ write.csv(train_models, "ffs_plus_models_lu90.csv")
 #########################################################################################
 # source("C:/Users/janst/sciebo/Bachelor Thesis/R/BachelorThesis/preparation_functions.R")
 setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
+library(raster)
+library(rasterVis)
 
 # load grids
 stack_dresden <- stack("created/stack/dresden.grd")
@@ -147,6 +149,83 @@ stack_sevilla <- stack("created/stack/sevilla.grd")
 plot(stack_dresden)
 plot(stack_krakow)
 plot(stack_sevilla)
+
+
+data_plots <- function(stack, city_name) {
+  setwd("C:/Users/janst/sciebo/Bachelor Thesis/results/data/plots/")
+  
+  titles <- c("change", "built_dens(m)", "population density (people / cell)", 
+                            "slope (%)", "landuse", "distance to major roads (m)", "distance to primary roads (m)", 
+                             "distance to major river (m)", "distance to train stations (m)", 
+                             "distance to city center (m)", "distance to airport (m)")
+  
+  #### single plots
+  plotname <- paste(city_name, "_change.tiff", sep = "")
+  
+  change <- as.factor(stack$change)
+  lev <- levels(change)[[1]]
+  lev[["changed"]] <- c("not changed", "changed")
+  levels(change) <- lev
+  tiff(plotname)
+  levelplot(change, col.regions=rev(terrain.colors(2)), main="change to built up from 1990 to 2014")
+  Sys.sleep(3)
+  dev.off()
+  
+  
+  plotname <- paste(city_name, "_landuse.tiff", sep = "")
+  
+  lu <- as.factor(stack$landuse)
+  lev <- levels(lu)[[1]]
+  if(city_name == "Sevilla") {
+    lev[["landcover"]] <- c("artificial", "crop", "forest", "open", "water")
+    lu_colors <- c("#F2F2F2FF","#EEB99FFF", "#00A600FF", "#E6E600FF", "blue")
+  } else {
+    lev[["landcover"]] <- c("artificial", "crop", "pasture", "forest", "water")
+    lu_colors <- c("#F2F2F2FF", "#EEB99FFF", "#EAB64EFF", "#00A600FF", "blue")
+  }
+  levels(lu) <- lev
+  tiff(plotname)
+  levelplot(lu, col.regions=lu_colors, main="Landuse in 1990")
+  dev.off()
+
+  
+  for (i in c(1:nlayers(stack))) {
+    plotname <- paste(paste(city_name, names(stack)[[i]], sep="_"), ".tiff", sep = "")
+    
+    if(names(stack[[i]]) == "change") {
+      
+      plot(stack[[i]], main="Change to built up from 1990 to 2014")
+      
+    } else if(names(stack[[i]]) == "landuse") {
+      
+      plot(stack[[i]], main = "landuse", legend = F)
+      if(city_name == "Sevilla") {
+        lev[["landcover"]] <- c("artificial", "crop", "forest", "open", "water")
+        lu_colors <- c("#F2F2F2FF","#EEB99FFF", "#00A600FF", "#E6E600FF", "blue")
+      } else {
+        lev[["landcover"]] <- c("artificial", "crop", "pasture", "forest", "water")
+        lu_colors <- c("#F2F2F2FF", "#EEB99FFF", "#EAB64EFF", "#00A600FF", "blue")
+      }
+      plot(stack[[i]], main = "landuse ...")
+      
+    } else {
+      tiff(plotname)
+      plot(stack[[i]], main = titles[i])
+      dev.off()
+    }
+  }
+}
+
+
+
+data_plots(stack_dresden, "Dresden")
+data_plots(stack_krakow, "Krakow")
+data_plots(stack_sevilla, "Sevilla")
+# compare original to samples
+# boxplots?
+
+
+
 
 
 ############################################################################
