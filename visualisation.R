@@ -90,9 +90,9 @@ compare_coefs <- function(model1, model2, model3) {
   coefs["aic", 3] <- model2$aic
   coefs["aic", 5] <- model3$aic
   
-  coefs["roc", 1] <- calc_roc(model1)
-  coefs["roc", 3] <- calc_roc(model2)
-  coefs["roc", 5] <- calc_roc(model3)
+  coefs["roc", 1] <- calc_roc(model1, data.d.a)
+  coefs["roc", 3] <- calc_roc(model2, data.s.a )
+  coefs["roc", 5] <- calc_roc(model3, data.k.a)
   
   message("Check data for Morans!")
   coefs["Morans I", 1] <- calc_moransI(data.d2)$estimate[1]
@@ -120,8 +120,8 @@ glm_allV_models <- compare_coefs(trained.d$glm, trained.s$glm, trained.k$glm)
 write.csv(glm_allV_models, "glm_allV_models_lu90.csv")
 train_models <- compare_coefs(trained.d$train$finalModel, trained.s$train$finalModel, trained.k$train$finalModel)
 write.csv(train_models, "train_models_lu90.csv")
-train_models <- compare_coefs(trained.d$ffs_plus$finalModel, trained.s$ffs_plus$finalModel, trained.k$ffs_plus$finalModel)
-write.csv(train_models, "ffs_plus_models_lu90.csv")
+ffs_plus_models <- compare_coefs(trained.d$ffs_plus$finalModel, trained.s$ffs_plus$finalModel, trained.k$ffs_plus$finalModel)
+write.csv(ffs_plus_models, "ffs_plus_models_lu90.csv")
 
 
 
@@ -166,9 +166,9 @@ data_plots <- function(stack, city_name) {
   lev <- levels(change)[[1]]
   lev[["changed"]] <- c("not changed", "changed")
   levels(change) <- lev
+  # change_plot <- levelplot(change, col.regions=rev(terrain.colors(2)), main="change to built up from 1990 to 2014", ylim = y_d)
   tiff(plotname)
-  levelplot(change, col.regions=rev(terrain.colors(2)), main="change to built up from 1990 to 2014")
-  Sys.sleep(3)
+  levelplot(change, col.regions=rev(terrain.colors(2)), main="change to built up from 1990 to 2014", ylim = y_l, scales=list(y=list(rot=90)))
   dev.off()
   
   
@@ -185,7 +185,7 @@ data_plots <- function(stack, city_name) {
   }
   levels(lu) <- lev
   tiff(plotname)
-  levelplot(lu, col.regions=lu_colors, main="Landuse in 1990")
+  levelplot(lu, col.regions=lu_colors, main="Landuse in 1990", ylim = y_l, scales=list(y=list(rot=90)))
   dev.off()
 
   
@@ -210,7 +210,7 @@ data_plots <- function(stack, city_name) {
       
     } else {
       tiff(plotname)
-      plot(stack[[i]], main = titles[i])
+      plot(stack[[i]], main = titles[i], ylim = extent(stack)[3:4], xlim = extent(stack)[1:2])
       dev.off()
     }
   }
@@ -221,11 +221,24 @@ data_plots <- function(stack, city_name) {
 data_plots(stack_dresden, "Dresden")
 data_plots(stack_krakow, "Krakow")
 data_plots(stack_sevilla, "Sevilla")
+
+y_d <- c(5645100, 5672900)
+y_k <- c(5529000, 5560100)
+y_s <- c(4131000, 4151000)
 # compare original to samples
 # boxplots?
 
 
+############################################################################
+# boxplots
+############################################################################
+plot(as.factor(data.k2$change) ~ data.k2$built_dens)
 
+par(mfrow=c(2,2))
+boxplot(data.k2$built_dens ~data.k2$change)
+boxplot(data.k2$pop_dens ~data.k2$change)
+boxplot(data.k.a$built_dens ~data.k.a$change)
+boxplot(data.k.a$pop_dens ~data.k.a$change)
 
 
 ############################################################################
