@@ -17,13 +17,13 @@ GHSL_POL_2014 <- raster("original/GHSL/GHS_BUILT_LDS2014_GLOBE_R2018A_54009_250_
 GHSL_POL_1990 <- raster("original/GHSL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3_POL/GHS_BUILT_LDS1990_GLOBE_R2018A_54009_250_V2_0_19_3.tif")
 GHSL_ESP_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8_ESP/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_13_8.tif")
 GHSL_GER_30m <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_14_7.tif")
-GHSL_POL_30m_2 <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_15_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_15_7.tif")
+GHSL_POL_30m_wrong <- raster("original/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_15_7_POL/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_15_7.tif")
 GHSL_POL_ext <- c(2200000,2260000,6430000,6480000)
 GHSL_POL_30m <- mosaic(crop(GHSL_GER_30m, GHSL_POL_ext), crop(GHSL_POL_30m_2, GHSL_POL_ext), fun = mean)
 
 
-GHSL_pop_ESP <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4_ESP/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_17_4.tif")
-GHSL_pop_POL <- raster("original/GHSL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3_POL/GHS_POP_E2000_GLOBE_R2019A_54009_250_V1_0_19_3.tif")
+GHSL_pop_ESP <- raster("original/GHSL/GHS_POP_E1990_GLOBE_R2019A_54009_250_V1_0_17_4_ESP/GHS_POP_E1990_GLOBE_R2019A_54009_250_V1_0_17_4.tif")
+GHSL_pop_POL <- raster("original/GHSL/GHS_POP_E1990_GLOBE_R2019A_54009_250_V1_0_19_3_POL/GHS_POP_E1990_GLOBE_R2019A_54009_250_V1_0_19_3.tif")
 
 slope_ESP <- raster("original/slope/EUD_CP-SLOP_2500015000-AA_ESP/EUD_CP-SLOP_2500015000-AA.tif")
 slope_GER <- raster("original/slope/EUD_CP-SLOP_4500035000-AA_GER/EUD_CP-SLOP_4500035000-AA.tif")
@@ -81,6 +81,13 @@ writeRaster(stack_krakow, "created/stack/krakow_lu90.grd", overwrite = TRUE)
 
 
 ########################################################################################
+########################################################################################
+### the following code was at the end not used for the thesis
+########################################################################################
+########################################################################################
+
+
+########################################################################################
 ### process and save data
 
 # 250 m change
@@ -100,6 +107,11 @@ change_Krakow_30m <- getChangeFromMultitemp(GHSL_POL_30m, krakow_boundaries, 326
 writeRaster(change_Krakow_30m, "created/GHSL_R/krakow_change_30_m.tif", overwrite=T)
 change_Dresden_30m <- getChangeFromMultitemp(GHSL_GER_30m, dresden_boundaries, 32633, resolution = 30)
 writeRaster(change_Dresden_30m, "created/GHSL_R/dresden_change_30_m.tif", overwrite=T)
+
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/created/GHSL_R/")
+writeRaster(mask(reprojectAndCrop(GHSL_ESP_30m, sevilla_boundaries, 32630, 30), spTransform(sevilla_boundaries, "+init=epsg:32630")), "sevilla_built.tif", overwrite = T)
+writeRaster(mask(reprojectAndCrop(GHSL_GER_30m, dresden_boundaries, 32633, 30), spTransform(dresden_boundaries, "+init=epsg:32633")), "dresden_built.tif", overwrite = T)
+writeRaster(mask(reprojectAndCrop(GHSL_POL_30m, krakow_boundaries, 32634, 30), spTransform(krakow_boundaries, "+init=epsg:32634")), "krakow_built.tif", overwrite = T)
 
 # population density
 

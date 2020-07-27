@@ -2,8 +2,10 @@
 # interaction between independent variables
 ############################################################################################################################
 
-# attach(data.k, name = "samples")
-# detach(samples)
+setwd("C:/Users/janst/sciebo/Bachelor Thesis/data/")
+data.d.a <- read.csv("created/samples/dresden_all.csv")
+data.k.a <- read.csv("created/samples/krakow_all.csv")
+data.s.a <- read.csv("created/samples/sevilla_all.csv")
 
 ##############
 # pairwise correlations among the predictors 
@@ -13,6 +15,11 @@ cor(data.s.a[4:14])
 (correlation.k <- (abs(cor(data.k[5:15])) > 0.7))
 (correlation.d <- (abs(cor(data.d[5:15])) > 0.7))
 (correlation.s <- (abs(cor(data.s[5:15])) > 0.7))
+
+
+###########################################################
+# tried to have a look at other correlations
+###########################################################
 
 # continuous to categorical
 summary(lm(mRoads_dist ~ factor(landuse)))
