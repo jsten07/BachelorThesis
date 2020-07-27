@@ -6,8 +6,8 @@ Driven by a fast increasing population and urbanization the world’s cities exp
 
 #### Workflow / use of code
 * First data observation and preparation was done with QGIS. All other steps are performed using R.
-* R functions for the data preparation implemented in *preparation_funtions.R*.
-* The preparation functions were used to prepare the data of the particular cities in *process_data.R*.
+* R functions for the data preparation are implemented in *preparation_funtions.R*.
+* The preparation functions were used to prepare the data of the particular cities in *process_data.R* by creating a raster stack for every city.
 * Different logisitc regression models can be calculated with the functions in *regression.R*.
   * Models including all variables calculated with the *glm* and *train* functions.
   * Models that only consist of variables that increase the models performances calculated with *ffs* and *bss* functions from the *CAST* package.
